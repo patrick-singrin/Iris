@@ -269,10 +269,6 @@ export function useEventStoryStore() {
           item.verified = true
         }
       }
-      // Immediately reflect checklist changes in the story textarea
-      if (!userHasEditedStory.value) {
-        storyText.value = composedStory.value
-      }
     }
   }
 
@@ -294,10 +290,6 @@ export function useEventStoryStore() {
         item.source = 'user'
         item.verified = true
       }
-    }
-    // Immediately reflect verification changes in the story textarea
-    if (!userHasEditedStory.value) {
-      storyText.value = composedStory.value
     }
   }
 

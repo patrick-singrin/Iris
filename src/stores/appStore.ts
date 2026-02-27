@@ -1,8 +1,8 @@
 import { ref, watch } from 'vue'
 
-export type AppView = 'wizard' | 'settings' | 'documentation' | 'design-principles' | 'event-detail' | 'chat' | 'dev-context-forms' | 'event-story'
+export type AppView = 'settings' | 'documentation' | 'design-principles' | 'event-detail' | 'chat' | 'event-story'
 
-const VALID_VIEWS: AppView[] = ['wizard', 'settings', 'documentation', 'design-principles', 'event-detail', 'chat', 'dev-context-forms', 'event-story']
+const VALID_VIEWS: AppView[] = ['settings', 'documentation', 'design-principles', 'event-detail', 'chat', 'event-story']
 
 function viewFromHash(): AppView {
   const hash = window.location.hash.replace('#/', '').replace('#', '')

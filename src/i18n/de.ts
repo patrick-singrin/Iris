@@ -3,7 +3,6 @@ export const de: Record<string, string> = {
   'nav.events': 'Events',
   'nav.uiTextGenerator': 'UI Text Generator',
   'nav.designPrinciples': 'Design Principles',
-  'nav.eventStory': 'Event Story',
   'nav.settings': 'Einstellungen',
   'nav.eventDatabase': 'Event-Datenbank',
 

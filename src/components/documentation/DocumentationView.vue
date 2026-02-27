@@ -2,13 +2,11 @@
 import { computed, ref } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
 import { useAppStore } from '@/stores/appStore'
-import { useWizardStore } from '@/stores/wizardStore'
 import { downloadMarkdown } from '@/services/markdownExport'
 import { useI18n } from '@/i18n'
 
 const { events, refreshEvents, deleteEvent } = useEventStore()
 const { viewEvent, setView } = useAppStore()
-const { resetWizard } = useWizardStore()
 const { t } = useI18n()
 refreshEvents()
 
@@ -163,7 +161,7 @@ function getChannelShortName(channel: string): string {
       </div>
       <scale-button
         variant="primary"
-        @click="resetWizard(); setView('wizard')"
+        @click="setView('event-story')"
       >
         <scale-icon-action-add size="20" />
         {{ t('events.newEvent') }}

@@ -452,11 +452,12 @@ export function useEventStoryStore() {
   const currentFollowUp = computed<RenderableQuestion | null>(() => {
     if (followUpQueue.value.length === 0) return null
     const q = followUpQueue.value[0]!
+    const hasOptions = Array.isArray(q.options) && q.options.length >= 2
     return {
       id: `followup_${q.id}`,
       text: q.question,
-      inputType: 'freeform',
-      options: [],
+      inputType: hasOptions ? q.inputType : 'freeform',
+      options: hasOptions ? q.options!.map(o => ({ value: o.value, label: o.label })) : [],
       allowFreeform: true,
       freeformPlaceholder: t('story.orTypeYourOwn'),
       origin: 'followup',
@@ -472,7 +473,7 @@ export function useEventStoryStore() {
     followUpQueue.value = [...review.analysisResult.value.followUpQuestions]
   }
 
-  function answerFollowUp(freeformText: string) {
+  function answerFollowUp(selectedOptions: string[], freeformText: string) {
     const q = followUpQueue.value[0]
     if (!q) return
 
@@ -480,15 +481,26 @@ export function useEventStoryStore() {
     answers.value.push({
       questionId: `followup_${q.id}`,
       questionText: q.question,
-      selectedOptions: [],
+      selectedOptions,
       freeformText,
       timestamp: new Date().toISOString(),
       origin: 'followup',
     })
 
-    // Apply to checklist
+    // Apply to checklist — combine selected option labels with freeform text
+    const answerParts: string[] = []
+    if (selectedOptions.length > 0) {
+      const optionLabels = selectedOptions.map(v => {
+        const opt = q.options?.find(o => o.value === v)
+        return opt?.label || v
+      })
+      answerParts.push(...optionLabels)
+    }
     if (freeformText.trim()) {
-      review.applyFollowUpAnswer(q.targetChecklistItem, freeformText.trim())
+      answerParts.push(freeformText.trim())
+    }
+    if (answerParts.length > 0) {
+      review.applyFollowUpAnswer(q.targetChecklistItem, answerParts.join(', '))
     }
 
     // Advance queue

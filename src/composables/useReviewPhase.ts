@@ -30,7 +30,8 @@ export interface AnalysisFollowUp {
   id: string
   question: string
   targetChecklistItem: string
-  inputType: 'freeform'
+  inputType: 'single' | 'multiple' | 'freeform'
+  options?: { value: string; label: string }[]
 }
 
 export interface AnalysisResult {

@@ -32,15 +32,18 @@ src/
     wizard/        → Event creation wizard steps
     event-story/   → Story builder interview flow
     text-generation/ → Channel text generation UI
+    design-principles/ → Content design principles reference page
     settings/      → Settings panel (LLM config, product context)
     shared/        → Reusable UI components
   composables/     → Extracted logic (useReviewPhase, usePersistence)
-  data/            → Static data, question definitions, classification
+  data/            → Static data, question definitions, classification, design principles (.md)
   i18n/            → EN and DE translation files
   services/        → Business logic
     llm/           → LLM providers, prompt builders, parsers, JSON repair
   stores/          → Reactive state stores
+  styles/          → Shared CSS (markdown.css)
   types/           → TypeScript type definitions
+  utils/           → Shared utilities (renderMarkdown.ts)
 ```
 
 ## Error Handling Patterns

@@ -86,7 +86,10 @@ Return ONLY valid JSON, no markdown fences:
       "id": "followup_1",
       "question": "The question to ask the user",
       "targetChecklistItem": "the_checklist_item_id_to_update",
-      "inputType": "freeform"
+      "inputType": "single | multiple | freeform",
+      "options": [
+        { "value": "option_key", "label": "Human-readable label" }
+      ]
     }
   ]
 }
@@ -96,7 +99,8 @@ Rules:
 - Maximum 3 follow-up questions.
 - Only include follow-up questions for truly important gaps — don't ask about nice-to-haves.
 - If everything looks good, return assessment "good" with an empty findings array and empty followUpQuestions.
-- Follow-up question targetChecklistItem must be one of: ${checklist.map(i => i.id).join(', ')}.`
+- Follow-up question targetChecklistItem must be one of: ${checklist.map(i => i.id).join(', ')}.
+- For follow-up questions: if you can offer 2-4 concrete choices, use inputType "single" (pick one) or "multiple" (pick several) and provide an "options" array. Use "freeform" only when the answer is truly open-ended (e.g. a description). Keep the question text short — do NOT embed the options in the question text. The options array does that.`
 
   if (productContext) {
     prompt += `\n\n## Product Context\nThe following product-specific context should inform your quality analysis. Use it to evaluate domain accuracy and communication tone.\n\n${productContext}`
@@ -186,14 +190,20 @@ export async function runHolisticAnalysis(
   }))
 
   const knownIds = new Set(checklist.map(i => i.id))
+  const validInputTypes = new Set(['single', 'multiple', 'freeform'])
   const validFollowUps = (parsed.followUpQuestions || []).slice(0, 3).filter(q =>
     q.id && q.question && q.targetChecklistItem && knownIds.has(q.targetChecklistItem),
-  ).map(q => ({
-    id: q.id,
-    question: q.question,
-    targetChecklistItem: q.targetChecklistItem,
-    inputType: 'freeform' as const,
-  }))
+  ).map(q => {
+    const hasOptions = Array.isArray(q.options) && q.options.length >= 2
+    const inputType = hasOptions && validInputTypes.has(q.inputType) ? q.inputType as 'single' | 'multiple' | 'freeform' : 'freeform'
+    return {
+      id: q.id,
+      question: q.question,
+      targetChecklistItem: q.targetChecklistItem,
+      inputType,
+      ...(hasOptions ? { options: (q.options as { value?: string; label?: string }[]).slice(0, 4).map(o => ({ value: o.value || '', label: o.label || o.value || '' })) } : {}),
+    }
+  })
 
   return {
     assessment: parsed.assessment === 'needs_attention' ? 'needs_attention' : 'good',

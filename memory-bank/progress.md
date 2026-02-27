@@ -14,9 +14,13 @@
 - [x] Fixed ~40 strict-mode TypeScript errors
 - [x] Vite optimizeDeps fix for Scale components
 - [x] Pipeline evaluation framework (pipeline-eval-v2.mjs, 12 scenarios)
-- [x] Product Context feature (productContextStore, local mode)
+- [x] Product Context feature (productContextStore, local mode, file upload)
 - [x] Product Context integrated into extraction + text gen prompts
 - [x] Confirm label clarity improvements (scope/impact disambiguation)
+- [x] Holistic analysis follow-up options (structured radio/checkbox)
+- [x] Document preview modal (scale-modal with formatted markdown)
+- [x] Design Principles page (renders content-design-principles.md)
+- [x] Shared markdown rendering utility (`renderMarkdown.ts` + `markdown.css`)
 
 ## In Progress
 - [ ] Pipeline quality optimization with Product Context
@@ -28,6 +32,9 @@
 - [ ] Placeholder template generation feature (infrastructure built, UX not designed)
 
 ## Changelog
+- 2026-02-27 — Design Principles page: renders .md content with shared markdown utility, grey background + constrained card
+- 2026-02-27 — Extracted renderMarkdown to shared utility; enhanced with tables, links, blockquotes, task lists
+- 2026-02-27 — Holistic analysis follow-up options, file-based Product Context upload, document preview modal
 - 2026-02-27 — Improved confirm labels for scope/impact clarity; added impact_scope description example to extraction prompt
 - 2026-02-27 — Product Context integrated into pipeline eval (Runs 3-4). IPS 94.7-95.8 with context enabled.
 - 2026-02-26 — Pipeline eval v2 framework: 12 scenarios, IPS composite score, Run 2 = 94.3 (A)

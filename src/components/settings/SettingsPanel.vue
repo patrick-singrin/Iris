@@ -1,47 +1,36 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useProductContextStore, type ProductContextMode } from '@/stores/productContextStore'
+import { useProductContextStore, type ProductContextMode, type ProductContextDocument } from '@/stores/productContextStore'
 import { createProvider } from '@/services/llm/providerFactory'
+import { renderMarkdown } from '@/utils/renderMarkdown'
 
 const { state } = useSettingsStore()
-const { state: pcState } = useProductContextStore()
-
-const LOCAL_TEMPLATE = `# Product Context
-
-## Product Name
-[Your product name]
-
-## Domain Description
-[Brief description of what your product does and who uses it]
-
-## Key Terminology
-[Product-specific terms, feature names, technical concepts]
-
-## Domain-Specific Rules
-[Any rules specific to your product's communications]`
+const { state: pcState, addDocument, removeDocument } = useProductContextStore()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// Pre-fill template if local content is empty
-if (pcState.mode === 'local' && !pcState.localContent.trim()) {
-  pcState.localContent = LOCAL_TEMPLATE
+// --- Document preview modal ---
+const previewDoc = ref<ProductContextDocument | null>(null)
+
+function openPreview(doc: ProductContextDocument) {
+  previewDoc.value = doc
 }
+
+function closePreview() {
+  previewDoc.value = null
+}
+
+const previewHtml = computed(() =>
+  previewDoc.value ? renderMarkdown(previewDoc.value.content) : '',
+)
 
 function handleModeChange(e: Event) {
   const customEvent = e as CustomEvent
   const value = customEvent.detail?.value as ProductContextMode | undefined
   if (value) {
     pcState.mode = value
-    if (value === 'local' && !pcState.localContent.trim()) {
-      pcState.localContent = LOCAL_TEMPLATE
-    }
   }
-}
-
-function handleContentChange(e: Event) {
-  const customEvent = e as CustomEvent
-  pcState.localContent = customEvent.detail?.value ?? ''
 }
 
 function triggerFileUpload() {
@@ -50,14 +39,20 @@ function triggerFileUpload() {
 
 async function handleFileUpload(event: Event) {
   const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  pcState.localContent = await file.text()
+  const files = input.files
+  if (!files || files.length === 0) return
+
+  for (const file of Array.from(files)) {
+    const content = await file.text()
+    if (content.trim()) {
+      addDocument(file.name, content)
+    }
+  }
   input.value = ''
 }
 
-function clearContent() {
-  pcState.localContent = ''
+function handleRemoveDocument(name: string) {
+  removeDocument(name)
 }
 
 const testStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
@@ -191,8 +186,8 @@ async function testConnection() {
     <div class="settings__section">
       <h3>Product Context</h3>
       <p class="settings__helper">
-        Provide product-specific knowledge to improve extraction accuracy and text quality.
-        Activate it in the classification panel during event documentation.
+        Upload Markdown files with product-specific knowledge to improve extraction accuracy and text quality.
+        Activate context in the classification panel during event documentation.
       </p>
 
       <scale-dropdown-select
@@ -201,49 +196,83 @@ async function testConnection() {
         @scale-change="handleModeChange"
       >
         <scale-dropdown-select-item value="local" :selected="pcState.mode === 'local'">
-          Local (Markdown)
+          Local (Markdown files)
         </scale-dropdown-select-item>
         <scale-dropdown-select-item value="rag" :selected="pcState.mode === 'rag'" disabled>
           RAG API (coming soon)
         </scale-dropdown-select-item>
       </scale-dropdown-select>
 
-      <!-- Local markdown editor -->
-      <div v-if="pcState.mode === 'local'" class="product-context__editor">
-        <scale-textarea
-          :value="pcState.localContent"
-          label="Product context (Markdown)"
-          rows="12"
-          resize="vertical"
-          @scaleChange="handleContentChange"
+      <!-- Local document list -->
+      <div v-if="pcState.mode === 'local'" class="product-context__documents">
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".md,.txt,.markdown"
+          multiple
+          style="display: none"
+          @change="handleFileUpload"
         />
-        <div class="product-context__actions">
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept=".md,.txt,.markdown"
-            style="display: none"
-            @change="handleFileUpload"
-          />
-          <scale-button variant="secondary" size="small" @click="triggerFileUpload">
-            Load .md file
-          </scale-button>
-          <scale-button variant="secondary" size="small" @click="clearContent">
-            Clear
-          </scale-button>
-        </div>
-        <p class="settings__helper">
-          Suggested sections: Product Name, Domain Description, Tone &amp; Voice, Key Terminology, Domain-Specific Rules.
+        <scale-button variant="secondary" size="small" @click="triggerFileUpload">
+          Upload .md files
+        </scale-button>
+
+        <!-- Document list -->
+        <ul v-if="pcState.documents.length > 0" class="product-context__list">
+          <li
+            v-for="doc in pcState.documents"
+            :key="doc.name"
+            class="product-context__item"
+          >
+            <span class="product-context__name">{{ doc.name }}</span>
+            <div class="product-context__actions">
+              <scale-button
+                variant="secondary"
+                size="small"
+                @click="openPreview(doc)"
+              >
+                Preview
+              </scale-button>
+              <scale-button
+                variant="secondary"
+                size="small"
+                @click="handleRemoveDocument(doc.name)"
+              >
+                Delete
+              </scale-button>
+            </div>
+          </li>
+        </ul>
+
+        <!-- Empty state -->
+        <p v-else class="settings__helper">
+          No context documents uploaded yet. Upload .md files with product name, terminology, tone guidelines, or domain rules.
         </p>
       </div>
 
       <!-- RAG placeholder -->
       <div v-if="pcState.mode === 'rag'">
         <p class="settings__helper">
-          RAG API integration is planned for a future release. Switch to Local mode to provide product context manually.
+          RAG API integration is planned for a future release. Switch to Local mode to provide product context via files.
         </p>
       </div>
     </div>
+
+    <!-- Document preview modal -->
+    <scale-modal
+      :opened="!!previewDoc"
+      :heading="previewDoc?.name ?? ''"
+      size="large"
+      @scale-close="closePreview"
+    >
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <div class="md-preview md-content" v-html="previewHtml"></div>
+      <div slot="action">
+        <scale-button variant="secondary" @click="closePreview">
+          Close
+        </scale-button>
+      </div>
+    </scale-modal>
   </div>
 </template>
 
@@ -280,14 +309,56 @@ async function testConnection() {
   gap: 12px;
 }
 
-.product-context__editor {
+.product-context__documents {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.product-context__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-context__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--telekom-color-background-canvas, #f4f4f4);
+  border: 1px solid var(--telekom-color-ui-border-standard, #ccc);
+  border-radius: 6px;
+}
+
+.product-context__name {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--telekom-color-text-and-icon-standard, #1b1b1b);
+  min-width: 0;
+  flex: 1;
+}
+
 .product-context__actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
+
+.md-preview {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+</style>
+
+<!-- Non-scoped: markdown styles must reach v-html content -->
+<style>
+@import '@/styles/markdown.css';
 </style>

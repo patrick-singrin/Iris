@@ -1,13 +1,16 @@
 # Active Context
 
 ## Current Focus
-Improving LLM pipeline quality with Product Context enabled. Evaluating extraction accuracy, narrative quality, and confirm label clarity.
+UI polish and documentation. Recently added Design Principles reference page, shared markdown rendering, and holistic analysis follow-up options.
 
 ## Recent Changes
-- Added Product Context to pipeline eval script (`PRODUCT_CONTEXT` constant in `tests/pipeline-eval-v2.mjs`)
-- Ran pipeline eval Runs 3-4 with product context — IPS 94.7-95.8 (A/A+), parse rate 67% (14B model limit)
-- Fixed ambiguous confirm labels: "Is this the right scope?" → "Is this how widespread the impact is?", "Is this the right impact?" → "Is this how users are affected?" (EN + DE)
-- Added `impact_scope` BAD/GOOD description example to extraction prompt to prevent conflation with `who_affected`
+- Built Design Principles page — renders `content-design-principles.md` with shared markdown utility, grey background + constrained-width card for optimal reading
+- Extracted `renderMarkdown` to shared utility (`src/utils/renderMarkdown.ts`) and CSS (`src/styles/markdown.css`)
+- Added holistic analysis follow-up options — structured radio/checkbox instead of freeform-only
+- Added file-based Product Context — upload `.md` files, stored in localStorage, list with delete
+- Added document preview modal — scale-modal showing formatted markdown preview
+- Enhanced `renderMarkdown` with links, blockquotes, tables, strikethrough, images, task lists
+- Fixed Vue scoped CSS + `v-html` incompatibility with dual `<style>` block pattern
 
 ## Open Questions
 - Production LLM provider selection (Anthropic vs other) — affects parse reliability
@@ -20,6 +23,7 @@ Improving LLM pipeline quality with Product Context enabled. Evaluating extracti
 - [ ] Test with a larger/production LLM to confirm parse regression resolves
 - [ ] Implement RAG mode for Product Context
 - [ ] Consider E2E tests (Playwright) for the question-answer-narrative flow
+- [ ] Create project README.md
 
 ---
 *Last updated: 2026-02-27*

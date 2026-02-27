@@ -44,8 +44,8 @@ function handleAnalysisChoice(choice: 'analyze' | 'skip') {
   selectAnalysisChoice(choice)
 }
 
-function handleFollowUpAnswer(_selectedOptions: string[], freeformText: string) {
-  answerFollowUp(freeformText)
+function handleFollowUpAnswer(selectedOptions: string[], freeformText: string) {
+  answerFollowUp(selectedOptions, freeformText)
 }
 
 function handleFollowUpSkip() {

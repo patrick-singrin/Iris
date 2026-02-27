@@ -1,63 +1,91 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { EscalationStep } from '@/types/event'
-import { getPresets } from '@/data/escalation-presets'
+import { ref, onMounted } from 'vue'
+import { TIMING_OPTIONS, DEFAULT_TIMING_ID, getTimingById, createDefaultStep } from '@/data/escalation-timing'
+import type { TimingOption } from '@/data/escalation-timing'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
 const store = useEventStoryStore()
 
-const presets = getPresets()
+const confirmingDeleteIndex = ref<number | null>(null)
+const generatingStepId = ref<string | null>(null)
 
-const activePresetId = computed(() => {
-  const steps = store.escalationSteps.value
-  if (steps.length === 0) return null
-  for (const preset of presets) {
-    if (
-      preset.steps.length === steps.length &&
-      preset.steps.every((ps, i) => steps[i]?.label === ps.label && steps[i]?.relativeDays === ps.relativeDays)
-    ) {
-      return preset.id
-    }
+// Ensure at least one default step exists on mount
+onMounted(() => {
+  if (store.escalationSteps.value.length === 0) {
+    store.setEscalationSteps([createDefaultStep(0)])
   }
-  return 'custom'
 })
 
-const isEnabled = computed(() => store.escalationSteps.value.length > 0)
-
-function selectPreset(presetId: string) {
-  const preset = presets.find(p => p.id === presetId)
-  if (preset) {
-    store.setEscalationSteps(preset.steps.map(s => ({ ...s })))
-  }
-}
-
-function disableEscalation() {
-  store.setEscalationSteps([])
+/** Return timing options not yet used by other steps. */
+function availableTimings(currentIndex: number): TimingOption[] {
+  const usedIds = new Set(
+    store.escalationSteps.value
+      .filter((_, i) => i !== currentIndex)
+      .map(s => s.timingId),
+  )
+  return TIMING_OPTIONS.filter(opt => !usedIds.has(opt.id))
 }
 
 function addStep() {
-  const newStep: EscalationStep = {
-    id: `step_${Date.now()}`,
-    label: '',
-    relativeTime: '',
-    relativeDays: 0,
-    tone: '',
-  }
+  // Pick the first unused timing option
+  const usedIds = new Set(store.escalationSteps.value.map(s => s.timingId))
+  const firstAvailable = TIMING_OPTIONS.find(opt => !usedIds.has(opt.id))
+  if (!firstAvailable) return // All timings used
+
+  const newStep = createDefaultStep(store.escalationSteps.value.length)
+  // Override with first available timing
+  newStep.label = firstAvailable.label
+  newStep.timingId = firstAvailable.id
+  newStep.relativeTime = firstAvailable.relativeTime
+  newStep.relativeDays = firstAvailable.relativeDays
+  newStep.tone = firstAvailable.tone
   store.setEscalationSteps([...store.escalationSteps.value, newStep])
 }
 
-function removeStep(index: number) {
-  store.setEscalationSteps(store.escalationSteps.value.filter((_, i) => i !== index))
-}
-
-function updateStepField(index: number, field: keyof EscalationStep, value: string | number) {
+function updateTiming(index: number, timingId: string) {
+  const timing = getTimingById(timingId)
+  if (!timing) return
   const updated = store.escalationSteps.value.map((s, i) => {
-    if (i === index) return { ...s, [field]: value }
+    if (i === index) {
+      return {
+        ...s,
+        label: timing.label,
+        timingId: timing.id,
+        relativeTime: timing.relativeTime,
+        relativeDays: timing.relativeDays,
+        tone: timing.tone,
+      }
+    }
     return s
   })
   store.setEscalationSteps(updated)
+}
+
+function requestDelete(index: number) {
+  confirmingDeleteIndex.value = index
+}
+
+function confirmDelete(index: number) {
+  const step = store.escalationSteps.value[index]
+  if (step) {
+    store.deleteStep(step.id)
+  }
+  confirmingDeleteIndex.value = null
+}
+
+function cancelDelete() {
+  confirmingDeleteIndex.value = null
+}
+
+async function generateStep(stepId: string) {
+  generatingStepId.value = stepId
+  try {
+    await store.regenerateForStep(stepId)
+  } finally {
+    generatingStepId.value = null
+  }
 }
 </script>
 
@@ -66,32 +94,8 @@ function updateStepField(index: number, field: keyof EscalationStep, value: stri
     <h3 class="escalation-config__title">{{ t('story.escalationTitle') }}</h3>
     <p class="escalation-config__desc">{{ t('story.escalationDesc') }}</p>
 
-    <!-- Preset selector -->
-    <div class="escalation-presets">
-      <label class="escalation-presets__label">{{ t('story.escalationPresets') }}</label>
-      <div class="card-group">
-        <div
-          class="mini-card"
-          :class="{ 'mini-card--selected': !isEnabled }"
-          @click="disableEscalation"
-        >
-          {{ t('story.escalationOff') }}
-        </div>
-        <div
-          v-for="preset in presets"
-          :key="preset.id"
-          class="mini-card"
-          :class="{ 'mini-card--selected': activePresetId === preset.id }"
-          @click="selectPreset(preset.id)"
-          :title="preset.description"
-        >
-          {{ preset.name }} ({{ preset.steps.length }})
-        </div>
-      </div>
-    </div>
-
     <!-- Step list -->
-    <div v-if="isEnabled" class="escalation-steps">
+    <div class="escalation-steps">
       <div
         v-for="(step, index) in store.escalationSteps.value"
         :key="step.id"
@@ -100,41 +104,67 @@ function updateStepField(index: number, field: keyof EscalationStep, value: stri
         <div class="escalation-step__header">
           <span class="escalation-step__number">{{ index + 1 }}</span>
           <div class="escalation-step__fields">
-            <div class="escalation-step__row">
-              <scale-text-field
-                :label="t('story.escalationStepLabel')"
-                :value="step.label"
-                @scaleChange="(e: CustomEvent) => updateStepField(index, 'label', e.detail.value ?? '')"
-                size="small"
-              />
-              <scale-text-field
-                :label="t('story.escalationStepTiming')"
-                :value="step.relativeTime"
-                @scaleChange="(e: CustomEvent) => updateStepField(index, 'relativeTime', e.detail.value ?? '')"
-                size="small"
-              />
-            </div>
-            <scale-text-field
-              :label="t('story.escalationStepTone')"
-              :value="step.tone"
-              @scaleChange="(e: CustomEvent) => updateStepField(index, 'tone', e.detail.value ?? '')"
-              size="small"
-            />
+            <scale-dropdown-select
+              :label="t('story.escalationStepTiming')"
+              :value="step.timingId || DEFAULT_TIMING_ID"
+              @scale-change="(e: Event) => updateTiming(index, (e as CustomEvent).detail?.value)"
+            >
+              <scale-dropdown-select-item
+                v-for="opt in availableTimings(index)"
+                :key="opt.id"
+                :value="opt.id"
+                :selected="(step.timingId || DEFAULT_TIMING_ID) === opt.id"
+              >
+                {{ opt.label }}
+              </scale-dropdown-select-item>
+            </scale-dropdown-select>
           </div>
-          <button
-            class="escalation-step__remove"
-            @click="removeStep(index)"
-            :title="t('story.escalationRemoveStep')"
-            :disabled="store.escalationSteps.value.length <= 1"
+        </div>
+
+        <!-- Step actions -->
+        <div class="escalation-step__actions">
+          <scale-button
+            variant="secondary"
+            size="small"
+            :disabled="generatingStepId === step.id || store.isGeneratingText.value"
+            @click="generateStep(step.id)"
           >
-            ✕
+            {{ generatingStepId === step.id ? t('story.generating') : t('story.escalationGenerateStep') }}
+          </scale-button>
+          <button
+            class="escalation-step__delete-btn"
+            @click="requestDelete(index)"
+            :title="t('story.escalationDeleteStep')"
+          >
+            {{ t('story.escalationDeleteStep') }}
           </button>
+        </div>
+
+        <!-- Delete confirmation -->
+        <div v-if="confirmingDeleteIndex === index" class="escalation-step__confirm">
+          <span class="escalation-step__confirm-text">{{ t('story.escalationDeleteConfirm') }}</span>
+          <div class="escalation-step__confirm-actions">
+            <scale-button
+              variant="secondary"
+              size="small"
+              @click="cancelDelete"
+            >
+              {{ t('story.escalationDeleteNo') }}
+            </scale-button>
+            <button
+              class="escalation-step__confirm-delete"
+              @click="confirmDelete(index)"
+            >
+              {{ t('story.escalationDeleteYes') }}
+            </button>
+          </div>
         </div>
       </div>
 
       <scale-button
         variant="secondary"
         size="small"
+        :disabled="store.escalationSteps.value.length >= TIMING_OPTIONS.length"
         @click="addStep"
       >
         {{ t('story.escalationAddStep') }}
@@ -165,46 +195,6 @@ function updateStepField(index: number, field: keyof EscalationStep, value: stri
   margin: 0;
 }
 
-.escalation-presets {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.escalation-presets__label {
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.card-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mini-card {
-  padding: 8px 16px;
-  border: 2px solid var(--telekom-color-ui-border-standard, #ccc);
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.mini-card:hover {
-  border-color: var(--telekom-color-primary-standard, #e20074);
-  background: rgba(226, 0, 116, 0.06);
-}
-
-.mini-card--selected {
-  border-color: var(--telekom-color-primary-standard, #e20074);
-  background: rgba(226, 0, 116, 0.08);
-  color: var(--telekom-color-primary-standard, #e20074);
-}
-
 .escalation-steps {
   display: flex;
   flex-direction: column;
@@ -216,6 +206,9 @@ function updateStepField(index: number, field: keyof EscalationStep, value: stri
   border: 1px solid var(--telekom-color-ui-border-standard, #ccc);
   border-radius: 8px;
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .escalation-step__header {
@@ -241,35 +234,70 @@ function updateStepField(index: number, field: keyof EscalationStep, value: stri
 
 .escalation-step__fields {
   flex: 1;
+}
+
+.escalation-step__actions {
   display: flex;
-  flex-direction: column;
   gap: 8px;
+  padding-left: 36px;
 }
 
-.escalation-step__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.escalation-step__remove {
+.escalation-step__delete-btn {
   background: none;
-  border: none;
-  font-size: 16px;
-  color: var(--telekom-color-text-and-icon-additional, #6c6c6c);
+  border: 1px solid var(--telekom-color-ui-border-standard, #ccc);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  flex-shrink: 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.escalation-step__remove:hover:not(:disabled) {
+.escalation-step__delete-btn:hover {
   color: var(--telekom-color-functional-danger-standard, #e82010);
+  border-color: var(--telekom-color-functional-danger-standard, #e82010);
   background: rgba(232, 32, 16, 0.06);
 }
 
-.escalation-step__remove:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+.escalation-step__confirm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  margin-left: 36px;
+  background: rgba(232, 32, 16, 0.04);
+  border: 1px solid rgba(232, 32, 16, 0.2);
+  border-radius: 6px;
+}
+
+.escalation-step__confirm-text {
+  flex: 1;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  color: var(--telekom-color-functional-danger-standard, #e82010);
+}
+
+.escalation-step__confirm-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.escalation-step__confirm-delete {
+  background: var(--telekom-color-functional-danger-standard, #e82010);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.escalation-step__confirm-delete:hover {
+  background: #c91a0d;
 }
 </style>

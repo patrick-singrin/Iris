@@ -60,9 +60,9 @@ function handleSkip() {
         :key="q.id"
         class="followup-card__question"
       >
-        <label :for="q.id" class="followup-card__label">{{ q.question }}</label>
         <scale-text-field
           :input-id="q.id"
+          :label="q.question"
           :value="answers[q.id] || ''"
           @scaleChange="handleInput(q.id, $event)"
         />
@@ -138,14 +138,6 @@ function handleSkip() {
 .followup-card__question {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.followup-card__label {
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 14px;
-  font-weight: 655;
-  color: var(--telekom-color-text-and-icon-standard, #000);
 }
 
 .followup-card__actions {

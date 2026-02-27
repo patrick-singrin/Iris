@@ -29,6 +29,15 @@ export function useTextGenerationStore() {
     return { ...generatedText.data }
   }
 
+  function removeStepText(stepId: string) {
+    const prefix = `${stepId}_`
+    for (const key of Object.keys(generatedText.data)) {
+      if (key.startsWith(prefix)) {
+        delete generatedText.data[key]
+      }
+    }
+  }
+
   function reset() {
     generatedText.data = {}
     isGenerating.value = false
@@ -44,6 +53,7 @@ export function useTextGenerationStore() {
     setGeneratedText,
     updateField,
     mergeGeneratedText,
+    removeStepText,
     getGeneratedText,
     reset,
   }

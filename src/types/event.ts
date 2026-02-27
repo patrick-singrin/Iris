@@ -70,9 +70,10 @@ export type TypeContext =
 export interface EscalationStep {
   id: string          // e.g. "step_1", "step_2"
   label: string       // e.g. "Announcement", "Reminder"
+  timingId?: string   // References TimingOption.id from escalation-timing.ts
   relativeTime: string // e.g. "7 days before", "1 day before", "When it starts"
   relativeDays: number // Sort key: 7 = 7 days before, 1 = 1 day before, 0 = event time, -1 = after
-  tone: string        // Tone guidance for LLM
+  tone: string        // Tone guidance for LLM (auto-derived from timingId)
 }
 
 /** Type guard: checks if escalation contains user-configured steps */

@@ -1,24 +1,37 @@
 # Project Brief
 
 ## Vision
-<!-- What is this project and why does it exist? 1-3 sentences. -->
+Iris is a Content Design Assistant that helps teams create clear, actionable event notifications for end users — from incident alerts to maintenance announcements. It uses an LLM-guided interview flow to extract structured information and generate polished, multi-channel communication.
 
 ## Goals
-<!-- What are the primary outcomes this project should achieve? -->
-- [ ] 
+- [x] Guided event documentation via smart question flow
+- [x] LLM-powered extraction of structured data from freeform input
+- [x] Automated severity classification and channel recommendation
+- [x] Bilingual text generation (German + English) for multiple channels
+- [x] Product Context integration for domain-specific terminology
+- [ ] Production LLM deployment (currently local via LM Studio)
 
 ## Target Users
-<!-- Who is this for? What problems does it solve for them? -->
+Platform operators, incident managers, and communication teams at Deutsche Telekom who need to quickly draft and distribute event notifications across channels (email, banner, dashboard, status page).
 
 ## Scope
-<!-- What is in scope and explicitly out of scope? -->
 
 ### In Scope
-- 
+- Event story builder (interview-style wizard)
+- LLM-based extraction, narrative generation, and text generation
+- Severity matrix and classification derivation
+- Multi-channel output (email, banner, dashboard, status page)
+- Bilingual support (DE/EN)
+- Product context for domain-specific tuning
+- Markdown export of documented events
 
 ### Out of Scope
-- 
+- Direct publishing to channels (output is text, not API calls)
+- User authentication / multi-tenancy
+- Real-time collaboration
 
 ## Success Criteria
-<!-- How do we know this project is successful? -->
-- 
+- IPS (IRIS Pipeline Score) >= 90 (Grade A)
+- All classification-critical fields extracted correctly from freeform input
+- Generated text fits channel constraints (character limits, tone)
+- Bilingual output quality (German text independent, not translated)

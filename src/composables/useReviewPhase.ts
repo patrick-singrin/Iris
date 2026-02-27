@@ -7,8 +7,11 @@
 
 import { ref, type Ref, type ComputedRef } from 'vue'
 import type { StoryChecklistItem, StoryClassification, ChannelQuality } from '@/data/story-questions'
-import type { EscalationStep } from '@/types/event'
+import type { EscalationStep, Classification } from '@/types/event'
+import { createEmptyDescription } from '@/types/event'
 import { t } from '@/i18n'
+import { useTextGenerationStore } from '@/stores/textGenerationStore'
+import { useEventStore } from '@/stores/eventStore'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,6 +68,7 @@ export function useReviewPhase(
   const isAnalyzing = ref(false)
   const isGeneratingText = ref(false)
   const generationError = ref<string | null>(null)
+  const savedEventId = ref<string | null>(null)
 
   function skipAnalysis() {
     reviewStep.value = 'configure'
@@ -121,24 +125,61 @@ export function useReviewPhase(
     escalationSteps.value = steps
   }
 
-  async function proceedToGenerate() {
+  async function proceedToGenerate(opts?: { fromOutput?: boolean }) {
+    const returnOnError: ReviewStep = opts?.fromOutput ? 'output' : 'configure'
     reviewStep.value = 'generate'
     isGeneratingText.value = true
     generationError.value = null
 
     try {
-      const { generateStoryText } = await import('@/services/llm/storyTextGenerator')
-      await generateStoryText(
-        deps.checklist.value,
-        deps.classification.value!,
-        deps.storyText.value,
-        escalationSteps.value.length > 0 ? escalationSteps.value : undefined,
-      )
+      if (opts?.fromOutput) {
+        // Non-destructive: keeps old text on failure
+        const { regenerateAllText } = await import('@/services/llm/storyTextGenerator')
+        await regenerateAllText(
+          deps.checklist.value,
+          deps.classification.value!,
+          deps.storyText.value,
+          escalationSteps.value.length > 0 ? escalationSteps.value : undefined,
+        )
+      } else {
+        const { generateStoryText } = await import('@/services/llm/storyTextGenerator')
+        await generateStoryText(
+          deps.checklist.value,
+          deps.classification.value!,
+          deps.storyText.value,
+          escalationSteps.value.length > 0 ? escalationSteps.value : undefined,
+        )
+      }
       reviewStep.value = 'output'
+
+      // Auto-save event after successful generation
+      try {
+        const textStore = useTextGenerationStore()
+        const eventStore = useEventStore()
+        const description = createEmptyDescription()
+        description.whatHappened = deps.storyText.value
+        const cls = deps.classification.value!
+        const classification: Classification = {
+          type: cls.type,
+          severity: cls.severity,
+          severityExplanation: null,
+          channels: cls.channels,
+          purpose: '',
+          trigger: null,
+          escalation: escalationSteps.value.length > 0 ? escalationSteps.value : false,
+          typePath: [],
+          severityOverride: null,
+        }
+        const generatedText = textStore.getGeneratedText()
+        const event = eventStore.createEvent(description, classification, generatedText)
+        savedEventId.value = event.id
+      } catch (saveErr) {
+        console.warn('[useReviewPhase] Auto-save failed:', saveErr)
+      }
     } catch (err) {
       console.warn('[useReviewPhase] Text generation failed:', err)
       generationError.value = err instanceof Error ? err.message : t('story.generationFailed')
-      reviewStep.value = 'configure'
+      reviewStep.value = returnOnError
     } finally {
       isGeneratingText.value = false
     }
@@ -165,6 +206,33 @@ export function useReviewPhase(
     }
   }
 
+  async function regenerateForStep(stepId: string) {
+    isGeneratingText.value = true
+    generationError.value = null
+
+    try {
+      const { regenerateStepText } = await import('@/services/llm/storyTextGenerator')
+      await regenerateStepText(
+        stepId,
+        deps.checklist.value,
+        deps.classification.value!,
+        deps.storyText.value,
+        escalationSteps.value,
+      )
+    } catch (err) {
+      console.warn('[useReviewPhase] Per-step regeneration failed:', err)
+      generationError.value = err instanceof Error ? err.message : t('story.generationFailed')
+    } finally {
+      isGeneratingText.value = false
+    }
+  }
+
+  function deleteStep(stepId: string) {
+    escalationSteps.value = escalationSteps.value.filter(s => s.id !== stepId)
+    const textStore = useTextGenerationStore()
+    textStore.removeStepText(stepId)
+  }
+
   function backToStep(step: ReviewStep) {
     reviewStep.value = step
   }
@@ -176,6 +244,7 @@ export function useReviewPhase(
     isAnalyzing.value = false
     isGeneratingText.value = false
     generationError.value = null
+    savedEventId.value = null
   }
 
   return {
@@ -185,6 +254,7 @@ export function useReviewPhase(
     isAnalyzing,
     isGeneratingText,
     generationError,
+    savedEventId,
     skipAnalysis,
     startHolisticAnalysis,
     applyFollowUpAnswer,
@@ -192,6 +262,8 @@ export function useReviewPhase(
     setEscalationSteps,
     proceedToGenerate,
     regenerateForComponent,
+    regenerateForStep,
+    deleteStep,
     backToStep,
     resetReviewState,
   }

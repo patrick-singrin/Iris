@@ -35,6 +35,8 @@ export interface StoryAnalysisResult {
 export interface ConversationEntry {
   question: string
   selectedOptions: string[]
+  /** Human-readable labels for selectedOptions (same order). Used in the LLM prompt so the model sees labels, not raw enum values. */
+  selectedOptionLabels?: string[]
   freeformText: string
 }
 
@@ -113,6 +115,8 @@ DESCRIPTION FIELD — explain what was extracted so a human can verify it:
   GOOD: timing = "now", description = "Outage ongoing since 10:00 CET"
   BAD:  user_impact = "blocked", description = "service unavailable" (generic)
   GOOD: user_impact = "blocked", description = "Users cannot log in to the system"
+  BAD:  impact_scope = "limited", description = "Affects only users who have enabled automatic API key rotation" (this describes WHO, not HOW WIDESPREAD)
+  GOOD: impact_scope = "limited", description = "Only a specific subset of users is affected, not the entire platform"
 - For FREE TEXT fields: the description MUST be a shorter version of the value itself — same nouns, same verbs, same specifics. It must NOT be a meta-description about the value.
   RULE: If the value says "Regenerate API keys in the developer portal before March 31", the description must also mention "regenerate", "API keys", and "March 31" — NOT say "concrete action required" or "required steps".
   BAD:  what_to_do, description = "required steps" ← REJECTED (meta-label)
@@ -171,7 +175,11 @@ function buildUserMessage(conversation: ConversationEntry[]): string {
   return conversation.map((entry, i) => {
     const parts = [`Q${i + 1}: ${entry.question}`]
     if (entry.selectedOptions.length > 0) {
-      parts.push(`Selected: ${entry.selectedOptions.join(', ')}`)
+      // Use human-readable labels when available, fall back to raw values
+      const labels = entry.selectedOptionLabels && entry.selectedOptionLabels.length === entry.selectedOptions.length
+        ? entry.selectedOptionLabels
+        : entry.selectedOptions
+      parts.push(`Selected: ${labels.join(', ')}`)
     }
     if (entry.freeformText) {
       parts.push(`Answer: ${entry.freeformText}`)

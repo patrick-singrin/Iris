@@ -74,6 +74,30 @@ const MODEL = 'mistralai/ministral-3-14b-reasoning'
 const LLM_TEMPERATURE = 0.3  // Keep at 0.3 for reproducibility
 const LLM_MAX_TOKENS = 4096
 
+// Product Context — mirrors what users configure in Settings > Product Context
+// Set to null to disable, or provide a string to test with product context active.
+const PRODUCT_CONTEXT = `## Product Name
+AIFS Serving Platform
+
+## Domain Description
+AIFS Serving is an enterprise AI model serving and inference platform used by data scientists, ML engineers, and platform operators at Deutsche Telekom. It provides model deployment, monitoring, scaling, and API management for production AI/ML workloads.
+
+## Key Terminology
+- Model Endpoint: A deployed ML model accessible via REST API
+- Serving Instance: A running container hosting one or more model endpoints
+- Inference: A single prediction request processed by a model
+- Scaling Policy: Rules that govern auto-scaling of serving instances
+- Model Registry: Central catalog of versioned ML models
+- Pipeline: An orchestrated sequence of data processing and inference steps
+- Workspace: An isolated environment for a team's models and resources
+
+## Domain-Specific Rules
+- Always refer to the product as "AIFS Serving" (not "the platform" or "the system")
+- Users are addressed as platform operators, data scientists, or ML engineers depending on context
+- Technical terms (endpoint, inference, pipeline) should be used without simplification — our users are technical
+- Downtime or outages should reference affected model endpoints or serving instances specifically
+- Security events should mention credential rotation, API key invalidation, or access policy changes as appropriate`
+
 // ═══════════════════════════════════════════════════════════════════
 // ALLOWED VALUES (mirrors story-classification.ts)
 // ═══════════════════════════════════════════════════════════════════
@@ -230,7 +254,8 @@ Rules:
 
 ## Response format
 Return ONLY valid JSON:
-{"items":[{"id":"field_id","value":"extracted_value","description":"clear summary","evidence":"exact quote"}],"story":"What:\\n<text>\\n\\nWho:\\n<text>\\n\\nWhen:\\n<text>\\n\\nWhat to do:\\n<text>"}`
+{"items":[{"id":"field_id","value":"extracted_value","description":"clear summary","evidence":"exact quote"}],"story":"What:\\n<text>\\n\\nWho:\\n<text>\\n\\nWhen:\\n<text>\\n\\nWhat to do:\\n<text>"}` +
+  (PRODUCT_CONTEXT ? `\n\n## Product Context\nThe following product-specific context should inform your extraction and narrative. Use it to match the product's terminology and domain conventions.\n\n${PRODUCT_CONTEXT}` : '')
 }
 
 function buildTextGenSystemPrompt() {
@@ -259,7 +284,8 @@ TONE: Professional, clear, empathetic. Active voice. Specific over vague. Concis
 - Errors: Helpful, not blaming. Explain what went wrong and how to fix.
 - Notifications (Critical): Direct, urgent, action-focused.
 - Notifications (Medium): Informative, clear ask.
-- Feedback: Minimal confirming. 2-4 words ideal.`
+- Feedback: Minimal confirming. 2-4 words ideal.` +
+  (PRODUCT_CONTEXT ? `\n\n## Product Context\nThe following product-specific context should inform your text generation. Use it to match the product's voice, terminology, and domain conventions.\n\n${PRODUCT_CONTEXT}` : '')
 }
 
 function buildTextGenUserPrompt(checklist, classification, narrative, components) {
@@ -906,6 +932,7 @@ async function runTests() {
   console.log(`  Temperature: ${LLM_TEMPERATURE}`)
   console.log(`  Date: ${runTimestamp.slice(0, 10)}`)
   console.log(`  Run ID: ${runTimestamp.replace(/[:.]/g, '-')}`)
+  console.log(`  Product Context: ${PRODUCT_CONTEXT ? 'ENABLED' : 'disabled'}`)
   console.log(`  Scenarios: ${SCENARIOS.length}`)
   console.log(`  Methodology: Rubric-based multi-dimensional scoring`)
   console.log('═'.repeat(74))

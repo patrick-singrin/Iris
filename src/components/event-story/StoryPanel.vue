@@ -17,7 +17,10 @@ const {
   showWhyExplainer,
   applyTextEdit,
   toggleWhyExplainer,
+  phase,
 } = useEventStoryStore()
+
+const isReadOnly = computed(() => phase.value === 'text-generation')
 
 const { state: pcState } = useProductContextStore()
 const hasProductContent = computed(() => pcState.localContent.trim().length > 0)
@@ -25,6 +28,25 @@ const hasProductContent = computed(() => pcState.localContent.trim().length > 0)
 function handleProductContextToggle(e: Event) {
   const customEvent = e as CustomEvent
   pcState.enabled = customEvent.detail?.value ?? false
+}
+
+const infoIconRef = ref<HTMLElement | null>(null)
+const tooltipStyle = ref({ top: '0px', left: '0px' })
+const tooltipVisible = ref(false)
+
+function showTooltip() {
+  if (!infoIconRef.value) return
+  const rect = infoIconRef.value.getBoundingClientRect()
+  const spaceBelow = window.innerHeight - rect.bottom
+  const showAbove = spaceBelow < 120
+  tooltipStyle.value = showAbove
+    ? { top: 'auto', bottom: `${window.innerHeight - rect.top + 8}px`, left: `${rect.right - 268}px` }
+    : { top: `${rect.bottom + 8}px`, bottom: 'auto', left: `${rect.right - 268}px` }
+  tooltipVisible.value = true
+}
+
+function hideTooltip() {
+  tooltipVisible.value = false
 }
 
 const textareaRef = ref<HTMLElement | null>(null)
@@ -90,10 +112,11 @@ function handleApply() {
           :placeholder="t('story.narrativePlaceholder')"
           rows="10"
           resize="vertical"
+          :readonly="isReadOnly"
           @scaleChange="handleStoryInput"
         />
 
-        <div v-if="isDirty" class="story-panel__actions">
+        <div v-if="isDirty && !isReadOnly" class="story-panel__actions">
           <scale-button variant="secondary" size="small" @click="handleCancel">{{ t('story.revertChanges') }}</scale-button>
           <scale-button size="small" @click="handleApply">{{ t('story.applyChanges') }}</scale-button>
         </div>
@@ -113,13 +136,28 @@ function handleApply() {
 
       <!-- Section 3: Product Context + Reasoning -->
       <div class="story-panel__bottom">
-        <scale-switch
-          :checked="pcState.enabled"
-          :disabled="!hasProductContent"
-          label="Product Context"
-          size="small"
-          @scaleChange="handleProductContextToggle"
-        />
+        <div class="product-context-row">
+          <scale-switch
+            :checked="pcState.enabled"
+            :disabled="!hasProductContent"
+            label="Product Context"
+            size="small"
+            @scaleChange="handleProductContextToggle"
+          />
+          <span
+            ref="infoIconRef"
+            class="product-context-info"
+            :aria-label="t('productContext.tooltip')"
+            @mouseenter="showTooltip"
+            @mouseleave="hideTooltip"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="8" cy="4.75" r="0.75" fill="currentColor"/>
+            </svg>
+          </span>
+        </div>
         <ReasoningTile
           :checklist="checklist"
           :expanded="showWhyExplainer"
@@ -128,6 +166,16 @@ function handleApply() {
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="tooltipVisible"
+      class="product-context-tooltip"
+      :style="tooltipStyle"
+    >
+      {{ t('productContext.tooltip') }}
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -196,5 +244,39 @@ function handleApply() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.product-context-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.product-context-info {
+  display: inline-flex;
+  align-items: center;
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.55));
+  cursor: help;
+}
+
+.product-context-info:hover {
+  color: var(--telekom-color-text-and-icon-standard, #000);
+}
+</style>
+
+<style>
+.product-context-tooltip {
+  position: fixed;
+  width: 260px;
+  padding: 10px 12px;
+  background: #1b1b1b;
+  color: #fff;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  pointer-events: none;
 }
 </style>

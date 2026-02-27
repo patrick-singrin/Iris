@@ -1,19 +1,34 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import LanguageToggle from './LanguageToggle.vue'
 import ChannelPanel from './ChannelPanel.vue'
 import EscalationConfigurator from './EscalationConfigurator.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useTextGenerationStore } from '@/stores/textGenerationStore'
+import { useAppStore } from '@/stores/appStore'
 import { getNotificationComponents, getComponentsForType, resolveTypeKey } from '@/services/contentTemplates'
 import type { ComponentTemplate } from '@/types/contentTemplate'
 import { useI18n } from '@/i18n'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useEventStoryStore()
 const textStore = useTextGenerationStore()
+const { setView } = useAppStore()
 
-const activeLang = ref<'de' | 'en'>('de')
+const showSavedNotification = ref(false)
+
+function viewSavedEvent() {
+  setView('documentation')
+  showSavedNotification.value = false
+}
+
+function dismissSavedNotification() {
+  showSavedNotification.value = false
+}
+
+const activeLang = ref<'de' | 'en'>(
+  (locale.value.toLowerCase() as 'de' | 'en') || 'de'
+)
 const activeChannelIndex = ref(0)
 
 // Resolve components from classification
@@ -34,6 +49,14 @@ const activeComponent = computed(() => {
 const hasText = computed(() => {
   return Object.keys(textStore.generatedText.data).length > 0
 })
+
+// Show notification when event is auto-saved after generation
+watch(() => store.savedEventId?.value, (newId) => {
+  if (newId) {
+    showSavedNotification.value = true
+    setTimeout(() => { showSavedNotification.value = false }, 8000)
+  }
+})
 </script>
 
 <template>
@@ -52,11 +75,22 @@ const hasText = computed(() => {
         <scale-button
           size="small"
           :disabled="store.isGeneratingText.value"
-          @click="store.proceedToGenerate()"
+          @click="store.proceedToGenerate({ fromOutput: true })"
         >
           {{ store.isGeneratingText.value ? t('story.generating') : t('story.regenerateAll') }}
         </scale-button>
       </div>
+    </div>
+
+    <!-- Save notification -->
+    <div v-if="showSavedNotification" class="text-output__saved">
+      <span class="text-output__saved-text">{{ t('story.eventSaved') }}</span>
+      <button class="text-output__saved-link" @click="viewSavedEvent">
+        {{ t('story.eventSavedLink') }} &rarr;
+      </button>
+      <button class="text-output__saved-close" @click="dismissSavedNotification" :aria-label="t('story.dismiss')">
+        &times;
+      </button>
     </div>
 
     <!-- Collapsible escalation configurator -->
@@ -122,6 +156,8 @@ const hasText = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0;
+  flex: 1;
+  min-height: 0;
   background: var(--telekom-color-background-surface, #fff);
   border-radius: 12px;
   border: 1px solid var(--telekom-color-ui-faint, #dfdfe1);
@@ -220,6 +256,10 @@ const hasText = computed(() => {
 
 .text-output__content {
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
 }
 
 .text-output__loading {
@@ -278,5 +318,52 @@ const hasText = computed(() => {
   font-size: 14px;
   color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
   margin: 0;
+}
+
+.text-output__saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--telekom-color-functional-success-subtle, #e6f9ed);
+  border-bottom: 1px solid var(--telekom-color-functional-success-standard, #2fa858);
+}
+
+.text-output__saved-text {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--telekom-color-functional-success-standard, #1a7a3a);
+}
+
+.text-output__saved-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--telekom-color-primary-standard, #e20074);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.text-output__saved-link:hover {
+  color: var(--telekom-color-primary-hovered, #b3005c);
+}
+
+.text-output__saved-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
+  cursor: pointer;
+}
+
+.text-output__saved-close:hover {
+  color: var(--telekom-color-text-and-icon-standard, #000);
 }
 </style>

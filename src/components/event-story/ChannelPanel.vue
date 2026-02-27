@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import FieldEditor from '@/components/text-generation/FieldEditor.vue'
 import { useTextGenerationStore } from '@/stores/textGenerationStore'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
@@ -26,6 +26,19 @@ const activeStepId = computed(() => {
   if (!hasEscalation.value) return null
   return escalationSteps.value[activeStepIndex.value]?.id || null
 })
+
+// Clamp active step index when steps are removed
+watch(escalationSteps, (steps) => {
+  if (activeStepIndex.value >= steps.length) {
+    activeStepIndex.value = Math.max(0, steps.length - 1)
+  }
+})
+
+/** Check if a step has generated text in the store. */
+function stepHasText(stepId: string): boolean {
+  const prefix = `${stepId}_`
+  return Object.keys(textStore.generatedText.data).some(k => k.startsWith(prefix))
+}
 
 // Resolve component data — look up by component name (lowercased, spaces to underscores)
 const componentId = computed(() => {
@@ -88,6 +101,7 @@ async function regenerateTab() {
         @click="activeStepIndex = index"
       >
         {{ step.label || `Step ${index + 1}` }}
+        <span v-if="stepHasText(step.id)" class="channel-panel__step-check">&#10003;</span>
       </button>
     </div>
 
@@ -99,15 +113,14 @@ async function regenerateTab() {
 
       <template v-else>
         <!-- Select fields (read-only display) -->
-        <div v-for="field in selectFields" :key="field.id" class="channel-panel__select-field">
-          <span class="channel-panel__select-label">{{ field.label }}:</span>
-          <FieldEditor
-            :field="field"
-            :lang="lang"
-            :component-data="componentData"
-            :phase-prefix="activeStepId || undefined"
-          />
-        </div>
+        <FieldEditor
+          v-for="field in selectFields"
+          :key="field.id"
+          :field="field"
+          :lang="lang"
+          :component-data="componentData"
+          :phase-prefix="activeStepId || undefined"
+        />
 
         <!-- Editable text fields -->
         <FieldEditor
@@ -172,6 +185,12 @@ async function regenerateTab() {
   border-bottom-color: var(--telekom-color-primary-standard, #e20074);
 }
 
+.channel-panel__step-check {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--telekom-color-functional-success-standard, #2c8646);
+}
+
 .channel-panel__fields {
   display: flex;
   flex-direction: column;
@@ -184,19 +203,6 @@ async function regenerateTab() {
   color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
   font-style: italic;
   padding: 12px 0;
-}
-
-.channel-panel__select-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.channel-panel__select-label {
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
 }
 
 .channel-panel__regen-row {

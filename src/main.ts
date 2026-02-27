@@ -9,3 +9,13 @@ seedEventsIfEmpty()
 
 const app = createApp(App)
 app.mount('#app')
+
+// Dev demo shortcut — ?demo in URL or window.__iris_demo() in console
+if (import.meta.env.DEV) {
+  import('./dev/demo').then(m => {
+    ;(window as Record<string, unknown>).__iris_demo = m.loadDemo
+    if (new URLSearchParams(window.location.search).has('demo')) {
+      m.loadDemo()
+    }
+  })
+}

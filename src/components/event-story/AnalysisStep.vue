@@ -107,9 +107,9 @@ function continueWithoutFollowUps() {
           :key="q.id"
           class="analysis-step__followup"
         >
-          <label :for="q.id" class="analysis-step__followup-label">{{ q.question }}</label>
           <scale-text-field
             :input-id="q.id"
+            :label="q.question"
             :value="followUpAnswers[q.id] || ''"
             @scaleChange="followUpAnswers[q.id] = ($event as CustomEvent).detail.value"
           />
@@ -255,14 +255,6 @@ function continueWithoutFollowUps() {
 .analysis-step__followup {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.analysis-step__followup-label {
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 14px;
-  font-weight: 655;
-  color: var(--telekom-color-text-and-icon-standard, #000);
 }
 
 .analysis-step__actions {

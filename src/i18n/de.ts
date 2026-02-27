@@ -139,15 +139,23 @@ export const de: Record<string, string> = {
   // Eskalation
   'story.escalationTitle': 'Eskalationsstufen',
   'story.escalationDesc': 'Fügen Sie Eskalationsstufen hinzu, um separate Texte für jede Kommunikationsphase zu generieren.',
-  'story.escalationPresets': 'Vorlagen',
-  'story.escalationOff': 'Aus',
-  'story.escalationStepLabel': 'Bezeichnung',
+  'story.escalationStepTitle': 'Titel',
   'story.escalationStepTiming': 'Zeitpunkt',
-  'story.escalationStepTone': 'Tonalität',
-  'story.escalationRemoveStep': 'Stufe entfernen',
   'story.escalationAddStep': 'Stufe hinzufügen',
+  'story.escalationGenerateStep': 'Generieren',
+  'story.escalationDeleteStep': 'Löschen',
+  'story.escalationDeleteConfirm': 'Diese Stufe und den generierten Text löschen?',
+  'story.escalationDeleteYes': 'Löschen',
+  'story.escalationDeleteNo': 'Abbrechen',
   'story.escalationStepsLabel': 'Stufen',
+  'story.escalationTiming.weekBefore': '1 Woche vorher',
+  'story.escalationTiming.3daysBefore': '3 Tage vorher',
+  'story.escalationTiming.dayBefore': '1 Tag vorher',
+  'story.escalationTiming.whenStarts': 'Wenn es eintritt',
+  'story.escalationTiming.afterCompletion': 'Nach Abschluss',
   'story.generationFailed': 'Textgenerierung fehlgeschlagen. Bitte versuchen Sie es erneut.',
+  'story.eventSaved': 'Event erfolgreich gespeichert.',
+  'story.eventSavedLink': 'In Dokumentierten Events anzeigen',
 
   // History Intro-Karte
   'story.intro.title': 'Event Story Builder',
@@ -257,9 +265,9 @@ export const de: Record<string, string> = {
   'sq.cl.whoAffected': 'Zielgruppe',
   'sq.cl.whoAffected.confirm': 'Ist dies die richtige Zielgruppe?',
   'sq.cl.impactScope': 'Reichweite',
-  'sq.cl.impactScope.confirm': 'Ist dies die richtige Reichweite?',
+  'sq.cl.impactScope.confirm': 'Ist dies die richtige Auswirkungsbreite?',
   'sq.cl.userImpact': 'Auswirkung',
-  'sq.cl.userImpact.confirm': 'Ist dies die richtige Auswirkung?',
+  'sq.cl.userImpact.confirm': 'Sind die Nutzer so betroffen?',
   'sq.cl.timing': 'Zeitpunkt',
   'sq.cl.timing.confirm': 'Ist dies der richtige Zeitpunkt?',
   'sq.cl.actionRequired': 'Handlungsbedarf',
@@ -337,6 +345,9 @@ export const de: Record<string, string> = {
   'sq.quality.dashboardNeeds': 'Grundlegende Event-Beschreibung erforderlich.',
   'sq.quality.defaultReady': 'Bereit.',
   'sq.quality.defaultNeeds': 'Event-Beschreibung erforderlich.',
+
+  // Product Context Tooltip
+  'productContext.tooltip': 'Ergänzt Ihre produktspezifische Terminologie, Regeln und Kontext in den KI-Prompts. Konfiguriert unter Einstellungen > „Product Context". Verlängert den Prompt, was Antworten etwas verlangsamen kann.',
 
   // Story Questions — Nachweis-Strings
   'sq.evidence.allUsersAffected': 'Alle Nutzer betroffen',

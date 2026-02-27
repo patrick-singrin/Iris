@@ -238,3 +238,116 @@ export async function generateStoryText(
     store.isGenerating.value = false
   }
 }
+
+/**
+ * Non-destructive variant of generateStoryText() for re-generation from the
+ * output view. Does NOT call store.reset() — old text is preserved on failure,
+ * replaced only on success.
+ */
+export async function regenerateAllText(
+  checklist: StoryChecklistItem[],
+  classification: StoryClassification,
+  storyText: string,
+  escalationSteps?: EscalationStep[],
+): Promise<void> {
+  const store = useTextGenerationStore()
+  store.isGenerating.value = true
+
+  try {
+    const components = resolveComponents(classification)
+    if (components.length === 0) {
+      throw new Error('No applicable components found for this event type.')
+    }
+
+    const { getProductContext } = useProductContextStore()
+    const productContext = await getProductContext()
+    const provider = createProvider()
+    const systemPrompt = buildSystemPrompt(productContext)
+    const userPrompt = buildStoryUserPrompt(
+      checklist,
+      classification,
+      storyText,
+      components,
+      escalationSteps,
+    )
+
+    const maxTokens = escalationSteps && escalationSteps.length > 0
+      ? 4096 * escalationSteps.length
+      : 4096
+
+    const result = await provider.generateText({
+      systemPrompt,
+      userPrompt,
+      maxTokens,
+    })
+
+    store.rawResponse.value = result.rawResponse
+
+    if (result.parsedFields) {
+      store.setGeneratedText(result.parsedFields)
+    } else {
+      throw new Error('Could not parse AI response.')
+    }
+  } catch (err) {
+    store.error.value = err instanceof Error ? err.message : 'An unknown error occurred'
+    throw err
+  } finally {
+    store.isGenerating.value = false
+  }
+}
+
+/**
+ * Regenerate all channel text for a single escalation step.
+ * Merges results into existing data — other steps are untouched.
+ */
+export async function regenerateStepText(
+  stepId: string,
+  checklist: StoryChecklistItem[],
+  classification: StoryClassification,
+  storyText: string,
+  allSteps: EscalationStep[],
+): Promise<void> {
+  const store = useTextGenerationStore()
+  store.isGenerating.value = true
+
+  try {
+    const components = resolveComponents(classification)
+    if (components.length === 0) {
+      throw new Error('No applicable components found for this event type.')
+    }
+
+    const targetStep = allSteps.find(s => s.id === stepId)
+    if (!targetStep) throw new Error(`Step "${stepId}" not found.`)
+
+    const { getProductContext } = useProductContextStore()
+    const productContext = await getProductContext()
+    const provider = createProvider()
+    const systemPrompt = buildSystemPrompt(productContext)
+    const userPrompt = buildStoryUserPrompt(
+      checklist,
+      classification,
+      storyText,
+      components,
+      [targetStep],
+    )
+
+    const result = await provider.generateText({
+      systemPrompt,
+      userPrompt,
+      maxTokens: 4096,
+    })
+
+    if (result.parsedFields) {
+      for (const [key, value] of Object.entries(result.parsedFields)) {
+        store.mergeGeneratedText(key, value as Record<string, { en: string; de: string }>)
+      }
+    } else {
+      throw new Error('Could not parse AI response.')
+    }
+  } catch (err) {
+    store.error.value = err instanceof Error ? err.message : 'An unknown error occurred'
+    throw err
+  } finally {
+    store.isGenerating.value = false
+  }
+}

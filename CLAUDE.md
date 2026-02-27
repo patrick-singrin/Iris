@@ -1,9 +1,9 @@
 # Project Memory
 
 ## Quick Reference
-- **Project:** [PROJECT_NAME]
-- **Stack:** [PRIMARY_TECH_STACK]
-- **Status:** [Active Development | Maintenance | Planning]
+- **Project:** Iris — Content Design Assistant
+- **Stack:** Vue 3 + TypeScript + Vite, @telekom/scale-components, LM Studio (local LLM)
+- **Status:** Active Development
 
 ## Core Instructions
 - On first response, briefly confirm memory bank status: project name, current focus from activeContext.md, and last update date
@@ -14,17 +14,22 @@
 - Prefer small, incremental changes over large rewrites
 
 ## Project-Specific Rules
-<!-- Add rules that are unique to THIS project -->
-<!-- Examples: -->
-<!-- - Use pnpm, not npm -->
-<!-- - All API responses follow the envelope pattern { data, error, meta } -->
-<!-- - Components go in src/components/{feature}/ -->
+- Use npm (not pnpm or yarn)
+- Components go in `src/components/{feature}/`
+- Stores use plain Vue `ref`/`reactive` — no Pinia/Vuex
+- i18n keys use dot notation: `sq.cl.impactScope.confirm`
+- All i18n changes must update both `src/i18n/en.ts` and `src/i18n/de.ts`
+- LLM prompt changes should be validated with `node tests/pipeline-eval-v2.mjs` and results logged to `docs/pipeline-eval-results.md`
+- Scale components are Web Components — prefix `scale-*`, excluded from Vite optimizeDeps
+- Classification fields have strict allowed values in `src/data/story-classification.ts` — single source of truth
+- Architectural decisions are logged in `docs/decisions.md` with rationale
 
 ## Key Commands
-- Build: `[BUILD_COMMAND]`
-- Test: `[TEST_COMMAND]`
-- Lint: `[LINT_COMMAND]`
-- Dev: `[DEV_COMMAND]`
+- Build: `npm run build` (vue-tsc + vite build)
+- Test: `npm run test:run` (vitest single run)
+- Test (watch): `npm run test`
+- Dev: `npm run dev` (vite, port 5188)
+- Pipeline eval: `node tests/pipeline-eval-v2.mjs` (requires LM Studio at localhost:1234)
 
 ## Memory Bank
 @memory-bank/projectbrief.md

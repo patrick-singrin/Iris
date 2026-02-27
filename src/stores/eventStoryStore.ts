@@ -307,11 +307,24 @@ export function useEventStoryStore() {
   }
 
   function buildConversationContext(): ConversationEntry[] {
-    return answers.value.map(a => ({
-      question: a.questionText,
-      selectedOptions: a.selectedOptions,
-      freeformText: a.freeformText,
-    }))
+    const questions = getStoryQuestions()
+    return answers.value.map(a => {
+      // Resolve human-readable labels for selected options
+      const def = questions.find(q => q.id === a.questionId)
+      const labels = def
+        ? a.selectedOptions.map(val => {
+            const opt = def.options.find(o => o.value === val)
+            return opt ? opt.label : val
+          })
+        : undefined
+
+      return {
+        question: a.questionText,
+        selectedOptions: a.selectedOptions,
+        selectedOptionLabels: labels,
+        freeformText: a.freeformText,
+      }
+    })
   }
 
   async function runAnalysis() {
@@ -567,6 +580,9 @@ export function useEventStoryStore() {
     setEscalationSteps: review.setEscalationSteps,
     proceedToGenerate: review.proceedToGenerate,
     regenerateForComponent: review.regenerateForComponent,
+    regenerateForStep: review.regenerateForStep,
+    deleteStep: review.deleteStep,
     backToStep: review.backToStep,
+    savedEventId: review.savedEventId,
   }
 }

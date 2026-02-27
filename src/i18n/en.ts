@@ -139,15 +139,23 @@ export const en = {
   // Escalation
   'story.escalationTitle': 'Escalation Steps',
   'story.escalationDesc': 'Add escalation steps to generate separate text for each communication phase.',
-  'story.escalationPresets': 'Presets',
-  'story.escalationOff': 'Off',
-  'story.escalationStepLabel': 'Label',
+  'story.escalationStepTitle': 'Title',
   'story.escalationStepTiming': 'Timing',
-  'story.escalationStepTone': 'Tone guidance',
-  'story.escalationRemoveStep': 'Remove step',
   'story.escalationAddStep': 'Add step',
+  'story.escalationGenerateStep': 'Generate',
+  'story.escalationDeleteStep': 'Delete',
+  'story.escalationDeleteConfirm': 'Delete this step and its generated text?',
+  'story.escalationDeleteYes': 'Delete',
+  'story.escalationDeleteNo': 'Cancel',
   'story.escalationStepsLabel': 'steps',
+  'story.escalationTiming.weekBefore': '1 week before',
+  'story.escalationTiming.3daysBefore': '3 days before',
+  'story.escalationTiming.dayBefore': '1 day before',
+  'story.escalationTiming.whenStarts': 'When it occurs',
+  'story.escalationTiming.afterCompletion': 'After completion',
   'story.generationFailed': 'Text generation failed. Please try again.',
+  'story.eventSaved': 'Event saved successfully.',
+  'story.eventSavedLink': 'View in Documented Events',
 
   // History intro card
   'story.intro.title': 'Event Story Builder',
@@ -257,9 +265,9 @@ export const en = {
   'sq.cl.whoAffected': 'Audience',
   'sq.cl.whoAffected.confirm': 'Is this the right audience?',
   'sq.cl.impactScope': 'Scope',
-  'sq.cl.impactScope.confirm': 'Is this the right scope?',
+  'sq.cl.impactScope.confirm': 'Is this how widespread the impact is?',
   'sq.cl.userImpact': 'Impact',
-  'sq.cl.userImpact.confirm': 'Is this the right impact?',
+  'sq.cl.userImpact.confirm': 'Is this how users are affected?',
   'sq.cl.timing': 'Timing',
   'sq.cl.timing.confirm': 'Is this the right timing?',
   'sq.cl.actionRequired': 'Action needed',
@@ -337,6 +345,9 @@ export const en = {
   'sq.quality.dashboardNeeds': 'Need basic event description.',
   'sq.quality.defaultReady': 'Ready.',
   'sq.quality.defaultNeeds': 'Need event description.',
+
+  // Product Context tooltip
+  'productContext.tooltip': 'Adds your product-specific terminology, rules, and context to the AI prompts. Configured in Settings under "Product Context". Increases prompt length, which may slow responses slightly.',
 
   // Story Questions — evidence strings
   'sq.evidence.allUsersAffected': 'All users affected',

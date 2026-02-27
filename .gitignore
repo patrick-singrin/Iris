@@ -25,3 +25,13 @@ dist-ssr
 
 # Screenshots
 screenshots
+
+# Environment & secrets
+.env
+.env.*
+
+# Claude Code
+.claude/
+
+# Local working files
+initial input/

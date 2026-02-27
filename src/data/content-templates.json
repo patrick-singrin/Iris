@@ -1,0 +1,162 @@
+{
+  "id": "content-templates",
+  "name": "Content & Action Templates",
+  "description": "Defines the UI text fields to generate for each information type and its applicable UI components. Each field includes a character limit and whether it's required or optional.",
+  "version": "2.0.0",
+  "types": {
+    "notification": {
+      "name": "Notification",
+      "description": "System-initiated event requiring user awareness or action. Channels and fields depend on severity.",
+      "severityDependent": true,
+      "escalationPhases": [
+        { "id": "announcement", "name": "Announcement", "description": "Initial notification sent at lead time (e.g. 7 days or 1 day before)", "tone": "Informational, planning-focused. Prepare users for upcoming change." },
+        { "id": "reminder", "name": "Reminder", "description": "Sent 24 hours before the scheduled event", "tone": "Urgent, action-focused. Emphasize deadline and required actions." },
+        { "id": "active", "name": "Active", "description": "Sent when the event is happening", "tone": "Direct, status-update. Confirm the event is in progress." },
+        { "id": "resolution", "name": "Resolution", "description": "Sent after the event is completed", "tone": "Confirming, closing. Summarize outcome and next steps." }
+      ],
+      "components": {
+        "banner": {
+          "name": "Banner",
+          "appliesTo": ["CRITICAL", "HIGH"],
+          "fields": [
+            { "id": "banner_title", "label": "Title", "maxChars": 80, "required": true, "description": "One-line headline stating what happened. e.g. 'GPT-4 service unavailable' / 'GPT-4-Dienst nicht verfügbar'" },
+            { "id": "banner_description", "label": "Description", "maxChars": 150, "required": false, "description": "Additional context below the title. 1–2 sentences. e.g. 'All API endpoints are affected. Expected resolution by 4:00 AM CET.'" },
+            { "id": "banner_cta_primary", "label": "Primary CTA", "maxChars": 25, "required": false, "description": "Verb-first action label. e.g. 'View details' / 'Details anzeigen'" },
+            { "id": "banner_dismiss", "label": "Dismiss behavior", "type": "select", "options": ["Dismissible", "Must acknowledge"], "required": true, "description": "CRITICAL: must acknowledge. HIGH: dismissible." }
+          ]
+        },
+        "dashboard_item": {
+          "name": "Dashboard Item",
+          "appliesTo": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+          "fields": [
+            { "id": "dashboard_title", "label": "Title", "maxChars": 60, "required": true, "description": "Short label for the dashboard card" },
+            { "id": "dashboard_description", "label": "Description", "maxChars": 120, "required": true, "description": "Brief description — what happened, what to do" },
+            { "id": "dashboard_cta_primary", "label": "Primary CTA", "maxChars": 25, "required": false, "description": "Main action. e.g. 'Increase quota' / 'Kontingent erhöhen'" },
+            { "id": "dashboard_cta_secondary", "label": "Secondary CTA", "maxChars": 25, "required": false, "description": "Alternative action. e.g. 'View details' / 'Details anzeigen'" }
+          ]
+        },
+        "email": {
+          "name": "Email",
+          "appliesTo": ["CRITICAL", "HIGH", "MEDIUM"],
+          "fields": [
+            { "id": "email_subject", "label": "Subject line", "maxChars": 70, "required": true, "description": "Formula depends on severity. e.g. '[URGENT] GPT-4 — Complete outage'" },
+            { "id": "email_preview", "label": "Preview text", "minChars": 40, "maxChars": 90, "required": true, "description": "Visible in inbox list before opening. Complements subject, doesn't repeat it." },
+            { "id": "email_importance", "label": "Importance flag", "type": "select", "options": ["High", "Normal"], "required": true, "description": "CRITICAL/HIGH: High. MEDIUM: Normal." },
+            { "id": "email_greeting", "label": "Greeting", "maxChars": 50, "required": true, "description": "Formal salutation. EN: 'Dear users,' / DE: 'Sehr geehrte Nutzerinnen und Nutzer,'" },
+            { "id": "email_body", "label": "Body", "maxChars": 600, "required": true, "description": "2–4 sentences. Follow hierarchy: what happened → who is affected → what to do → when. Clear, specific, actionable." },
+            { "id": "email_cta_label", "label": "CTA button label", "maxChars": 25, "required": false, "description": "Verb-first action label. e.g. 'Check status' / 'Status prüfen'" },
+            { "id": "email_closing", "label": "Sign-off", "maxChars": 100, "required": true, "description": "Closing line with team name. e.g. 'Best regards, The AIFS Platform Team' / 'Mit freundlichen Grüßen, Ihr AIFS Platform Team'" }
+          ]
+        },
+        "api_response": {
+          "name": "API Response",
+          "appliesTo": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+          "fields": [
+            { "id": "api_message", "label": "Message", "maxChars": 200, "required": true, "description": "Human-readable message returned in the API response body. e.g. 'Service temporarily unavailable due to scheduled maintenance. Expected resolution: March 5, 4:00 AM CET.'" },
+            { "id": "api_action", "label": "Resolution hint", "maxChars": 120, "required": false, "description": "What the developer should do. e.g. 'Retry after the maintenance window. Monitor status at status.llmhub.com.'" }
+          ]
+        }
+      }
+    },
+    "error_warning": {
+      "name": "Error & Warnings",
+      "description": "Something is wrong or needs fixing. Appears inline at the point of action.",
+      "severityDependent": false,
+      "components": {
+        "inline_message": {
+          "name": "Inline Message",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "inline_title", "label": "Title", "maxChars": 60, "required": false, "description": "Optional short heading for the error. e.g. 'Request failed' / 'Anfrage fehlgeschlagen'" },
+            { "id": "inline_message", "label": "Message", "maxChars": 150, "required": true, "description": "What went wrong and what to do. 1–2 sentences. e.g. 'This API key has expired. Generate a new key to continue.'" },
+            { "id": "inline_cta", "label": "Action link", "maxChars": 25, "required": false, "description": "Optional inline action. e.g. 'Generate new key' / 'Neuen Schlüssel erstellen'" }
+          ]
+        }
+      }
+    },
+    "validation": {
+      "name": "Validation Messages",
+      "description": "Input guidance during form entry. Appears inline next to the field.",
+      "severityDependent": false,
+      "components": {
+        "field_message": {
+          "name": "Field Validation",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "validation_helper", "label": "Helper text", "maxChars": 80, "required": false, "description": "Proactive guidance shown under the field before the user makes an error. e.g. 'Must be 3–50 characters' / 'Muss 3–50 Zeichen lang sein'" },
+            { "id": "validation_error", "label": "Error message", "maxChars": 80, "required": true, "description": "Shown when validation fails. What's wrong and how to fix it. e.g. 'Too short — minimum 3 characters' / 'Zu kurz — mindestens 3 Zeichen'" }
+          ]
+        }
+      }
+    },
+    "transactional_confirmation": {
+      "name": "Transactional Confirmation",
+      "description": "Receipt or proof that a significant action completed. May appear as confirmation screen and/or transactional email.",
+      "severityDependent": false,
+      "components": {
+        "confirmation_screen": {
+          "name": "Confirmation Screen",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "confirmation_title", "label": "Title", "maxChars": 60, "required": true, "description": "What was completed. e.g. 'API key created' / 'API-Schlüssel erstellt'" },
+            { "id": "confirmation_description", "label": "Description", "maxChars": 200, "required": true, "description": "Details and any values the user needs. e.g. 'Your new API key: sk-abc... Copy it now — it won't be shown again.'" },
+            { "id": "confirmation_cta_primary", "label": "Primary CTA", "maxChars": 25, "required": true, "description": "Main next step. e.g. 'Copy key' / 'Schlüssel kopieren'" },
+            { "id": "confirmation_cta_secondary", "label": "Secondary CTA", "maxChars": 25, "required": false, "description": "Alternative. e.g. 'Go to dashboard' / 'Zum Dashboard'" }
+          ]
+        },
+        "transactional_email": {
+          "name": "Transactional Email",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "tx_email_subject", "label": "Subject line", "maxChars": 70, "required": true, "description": "Clear subject stating what was completed or what to do. e.g. 'Verify your email address' / 'Bestätigen Sie Ihre E-Mail-Adresse'" },
+            { "id": "tx_email_preview", "label": "Preview text", "minChars": 40, "maxChars": 90, "required": true, "description": "Visible in inbox before opening. Complements subject. e.g. 'Click the link below to activate your account.'" },
+            { "id": "tx_email_greeting", "label": "Greeting", "maxChars": 50, "required": true, "description": "Personal salutation. EN: 'Hello [Name],' / DE: 'Hallo [Name],'" },
+            { "id": "tx_email_body", "label": "Body", "maxChars": 400, "required": true, "description": "1–3 sentences. What was completed, key details, and what to do next." },
+            { "id": "tx_email_cta_label", "label": "CTA button label", "maxChars": 25, "required": true, "description": "Primary action. e.g. 'Verify email' / 'E-Mail bestätigen', 'View receipt' / 'Beleg anzeigen'" },
+            { "id": "tx_email_closing", "label": "Sign-off", "maxChars": 100, "required": true, "description": "Closing with team name. e.g. 'Best regards, The AIFS Platform Team' / 'Mit freundlichen Grüßen, Ihr AIFS Platform Team'" }
+          ]
+        }
+      }
+    },
+    "feedback": {
+      "name": "Feedback",
+      "description": "Simple acknowledgment that an action worked. Appears as toast notification, auto-dismisses.",
+      "severityDependent": false,
+      "components": {
+        "toast": {
+          "name": "Toast",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "toast_message", "label": "Message", "maxChars": 40, "required": true, "description": "Minimal confirmation. e.g. 'Settings saved' / 'Einstellungen gespeichert'" },
+            { "id": "toast_cta", "label": "Undo / Action", "maxChars": 15, "required": false, "description": "Optional undo or follow-up. e.g. 'Undo' / 'Rückgängig'" }
+          ]
+        }
+      }
+    },
+    "status_display": {
+      "name": "Status Display",
+      "description": "Persistent visual indicator of system state or process progress. Always visible, updates in real-time.",
+      "severityDependent": false,
+      "components": {
+        "status_indicator": {
+          "name": "Status Indicator",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "status_label", "label": "Label", "maxChars": 30, "required": true, "description": "What is being shown. e.g. 'API Status' / 'API-Status', 'Connection' / 'Verbindung'" },
+            { "id": "status_value", "label": "Status value", "maxChars": 30, "required": true, "description": "Current state. e.g. 'Operational' / 'Betriebsbereit', 'Offline', '85%'" },
+            { "id": "status_tooltip", "label": "Tooltip", "maxChars": 120, "required": false, "description": "Additional context on hover. e.g. 'Last checked 2 minutes ago' / 'Zuletzt geprüft vor 2 Minuten'" }
+          ]
+        },
+        "progress_indicator": {
+          "name": "Progress Indicator",
+          "appliesTo": ["all"],
+          "fields": [
+            { "id": "progress_label", "label": "Process label", "maxChars": 40, "required": true, "description": "What process is running. e.g. 'Uploading file' / 'Datei wird hochgeladen', 'Training model' / 'Modell wird trainiert'" },
+            { "id": "progress_status", "label": "Status text", "maxChars": 60, "required": true, "description": "Current progress. e.g. 'Step 3 of 5' / 'Schritt 3 von 5', '67% complete' / '67 % abgeschlossen'" },
+            { "id": "progress_complete", "label": "Completion message", "maxChars": 60, "required": false, "description": "Shown when the process finishes. e.g. 'Upload complete' / 'Upload abgeschlossen'" }
+          ]
+        }
+      }
+    }
+  }
+}

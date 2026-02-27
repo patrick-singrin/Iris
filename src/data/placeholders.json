@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Defines available placeholders for event communication templates. Each placeholder represents a variable detail that changes per event instance. Backend services can use this to generate form fields for placeholder values.",
+  "placeholders": [
+    {
+      "key": "service-name",
+      "label": "Service name",
+      "labelDe": "Service-Name",
+      "description": "The affected service, API, or product component",
+      "type": "text",
+      "eventKinds": ["system_change", "error_issue", "process_update"]
+    },
+    {
+      "key": "feature",
+      "label": "Feature",
+      "labelDe": "Funktion",
+      "description": "The specific feature, page, or module affected",
+      "type": "text",
+      "eventKinds": null
+    },
+    {
+      "key": "date",
+      "label": "Date",
+      "labelDe": "Datum",
+      "description": "A specific date (e.g. maintenance date, resolution date)",
+      "type": "date",
+      "eventKinds": null
+    },
+    {
+      "key": "start-time",
+      "label": "Start time",
+      "labelDe": "Startzeit",
+      "description": "Start of a maintenance or downtime window",
+      "type": "time",
+      "eventKinds": ["system_change"]
+    },
+    {
+      "key": "end-time",
+      "label": "End time",
+      "labelDe": "Endzeit",
+      "description": "End of a maintenance or downtime window",
+      "type": "time",
+      "eventKinds": ["system_change"]
+    },
+    {
+      "key": "timespan",
+      "label": "Timespan",
+      "labelDe": "Zeitraum",
+      "description": "Duration or time range of the event",
+      "type": "text",
+      "eventKinds": ["system_change", "process_update"]
+    },
+    {
+      "key": "deadline",
+      "label": "Deadline",
+      "labelDe": "Frist",
+      "description": "Deadline by which users must complete an action",
+      "type": "date",
+      "eventKinds": ["system_change", "process_update"]
+    },
+    {
+      "key": "url",
+      "label": "URL",
+      "labelDe": "URL",
+      "description": "A link users need to visit (e.g. new endpoint, documentation)",
+      "type": "url",
+      "eventKinds": null
+    },
+    {
+      "key": "api-endpoint",
+      "label": "API endpoint",
+      "labelDe": "API-Endpunkt",
+      "description": "The specific API endpoint or route affected",
+      "type": "text",
+      "eventKinds": ["system_change", "error_issue"]
+    },
+    {
+      "key": "version",
+      "label": "Version",
+      "labelDe": "Version",
+      "description": "A version number (e.g. old version, new version)",
+      "type": "text",
+      "eventKinds": ["system_change", "process_update"]
+    },
+    {
+      "key": "error-message",
+      "label": "Error message",
+      "labelDe": "Fehlermeldung",
+      "description": "The error text that users see",
+      "type": "text",
+      "eventKinds": ["error_issue"]
+    },
+    {
+      "key": "size-limit",
+      "label": "Size limit",
+      "labelDe": "Größenlimit",
+      "description": "A file size, rate limit, or threshold value",
+      "type": "text",
+      "eventKinds": ["error_issue"]
+    },
+    {
+      "key": "workaround",
+      "label": "Workaround",
+      "labelDe": "Übergangslösung",
+      "description": "A temporary workaround or alternative approach",
+      "type": "text",
+      "eventKinds": ["error_issue"]
+    },
+    {
+      "key": "affected-region",
+      "label": "Affected region",
+      "labelDe": "Betroffene Region",
+      "description": "Geographic region or data center affected",
+      "type": "text",
+      "eventKinds": ["system_change", "error_issue"]
+    },
+    {
+      "key": "contact",
+      "label": "Contact",
+      "labelDe": "Kontakt",
+      "description": "Contact information for support or escalation",
+      "type": "text",
+      "eventKinds": null
+    }
+  ]
+}

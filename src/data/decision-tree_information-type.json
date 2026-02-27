@@ -1,0 +1,204 @@
+{
+  "id": "information-type",
+  "name": "Event Type Classification",
+  "description": "Classifies a platform event into one of six communication types based on observable event characteristics. Each question asks about something the product team concretely knows about their event — no circular reasoning or presupposed knowledge of the outcome.",
+  "version": "3.0.0",
+  "entryNode": "start",
+  "nodes": {
+    "start": {
+      "type": "question",
+      "text": "Is the end user actively doing something when this event occurs?",
+      "description": "The event is a direct result of the user's current action: clicking a button, submitting a form, making an API call, uploading a file, configuring settings.",
+      "options": [
+        {
+          "label": "Yes, the user is performing an action",
+          "description": "The user triggered this directly — they clicked, submitted, requested, typed, or configured something",
+          "next": "user_problem_check"
+        },
+        {
+          "label": "No, this happens independently",
+          "description": "A system process, admin change, scheduled event, or background operation — not triggered by the current user's action",
+          "next": "system_temporality"
+        }
+      ]
+    },
+
+    "user_problem_check": {
+      "type": "question",
+      "text": "Is there a problem, error, or warning?",
+      "description": "Something went wrong, failed, or needs the user's attention to fix: errors, failed requests, permission issues, exceeded limits, or warnings about potential problems.",
+      "options": [
+        {
+          "label": "Yes, something is wrong",
+          "description": "An error occurred, a request failed, a limit was exceeded, or there is a warning about a potential issue",
+          "next": "result_error_warning"
+        },
+        {
+          "label": "No, everything is fine",
+          "description": "The action succeeded or the user is in the middle of a normal workflow",
+          "next": "user_form_check"
+        }
+      ]
+    },
+
+    "user_form_check": {
+      "type": "question",
+      "text": "Is this about guiding the user's input in a form field?",
+      "description": "The user is actively filling in a form and needs guidance: required-field indicators, format rules (e.g. email format), character limits, password requirements, uniqueness checks.",
+      "options": [
+        {
+          "label": "Yes, it's form input guidance",
+          "description": "Helping the user enter valid data: required fields, format hints, constraints, live validation feedback",
+          "next": "result_validation"
+        },
+        {
+          "label": "No, this isn't about form input",
+          "description": "The user completed an action or started a process — not actively typing into a field",
+          "next": "user_outcome"
+        }
+      ]
+    },
+
+    "user_outcome": {
+      "type": "question",
+      "text": "What best describes the outcome of the user's action?",
+      "description": "The user's action succeeded. How should the system respond?",
+      "options": [
+        {
+          "label": "A record or receipt the user needs to keep",
+          "description": "The user will need to reference this later: generated API key, confirmation number, transaction ID, created resource with details",
+          "next": "result_transactional_confirmation"
+        },
+        {
+          "label": "An ongoing process begins that shows progress",
+          "description": "Something is now running: file upload, model training, deployment pipeline, data export, batch processing",
+          "next": "result_status_display_process"
+        },
+        {
+          "label": "The action is acknowledged",
+          "description": "A quick 'it worked' confirmation: 'Saved', 'Copied', 'Deleted', 'Updated' — appears briefly, then disappears",
+          "next": "result_feedback"
+        }
+      ]
+    },
+
+    "system_temporality": {
+      "type": "question",
+      "text": "Does this represent an ongoing condition or a specific event?",
+      "description": "Ongoing conditions are current states that persist and may change at any moment (like a health dashboard). Specific events are discrete things that happened or will happen at a particular time (like a maintenance window).",
+      "options": [
+        {
+          "label": "An ongoing condition that may change at any time",
+          "description": "Current state that persists: service health, API availability, quota usage, connection status, model availability",
+          "next": "result_status_display_system"
+        },
+        {
+          "label": "A specific event, change, or announcement",
+          "description": "Something discrete: scheduled maintenance, model deprecation, pricing change, outage, security advisory, feature release",
+          "next": "result_notification"
+        }
+      ]
+    },
+
+    "result_error_warning": {
+      "type": "result",
+      "classification": "Error & Warnings",
+      "severity": null,
+      "purpose": "Communicate problems that need the user's attention. Shown inline where the problem occurred.",
+      "examples": [
+        "API rate limit exceeded — wait 60 seconds or upgrade your plan",
+        "Invalid model parameter: temperature must be between 0 and 2",
+        "Permission denied: you don't have access to this model",
+        "Connection lost — check your network and try again"
+      ],
+      "channels": ["Inline at point of action"]
+    },
+
+    "result_validation": {
+      "type": "result",
+      "classification": "Validation Messages",
+      "severity": null,
+      "purpose": "Guide users toward valid input before submission. Shown inline next to the field.",
+      "examples": [
+        "API key name must be 3–50 characters",
+        "Required: select at least one model",
+        "This name is already taken — choose a different one",
+        "Password must contain at least one number and one special character"
+      ],
+      "channels": ["Inline field validation"]
+    },
+
+    "result_transactional_confirmation": {
+      "type": "result",
+      "classification": "Transactional Confirmation",
+      "severity": null,
+      "purpose": "Confirm completed transactions. Serves as a receipt the user can reference later.",
+      "examples": [
+        "API key created — copy it now, it won't be shown again",
+        "Subscription activated — Invoice #12345 sent to your email",
+        "Model deployment complete — Endpoint: https://api.example.com/v1/gpt4"
+      ],
+      "channels": ["Confirmation screen / modal"]
+    },
+
+    "result_status_display_process": {
+      "type": "result",
+      "classification": "Status Display",
+      "severity": null,
+      "purpose": "Show progress of a user-initiated process. Persists until it completes or fails.",
+      "examples": [
+        "Upload progress: 67%",
+        "Model training: Step 3 of 5",
+        "Deployment in progress..."
+      ],
+      "channels": ["Persistent UI element (progress bar, spinner, status badge)"]
+    },
+
+    "result_feedback": {
+      "type": "result",
+      "classification": "Feedback",
+      "severity": null,
+      "purpose": "Acknowledge the user's action and maintain interaction flow. Brief, transient, and auto-dismissing — no record needed.",
+      "examples": [
+        "Settings saved",
+        "API key copied to clipboard",
+        "Configuration updated",
+        "Model removed from favorites"
+      ],
+      "channels": ["Toast notification (auto-dismiss)"]
+    },
+
+    "result_status_display_system": {
+      "type": "result",
+      "classification": "Status Display",
+      "severity": null,
+      "purpose": "Show current system state and health. Always visible on the relevant screen, updates automatically.",
+      "examples": [
+        "API Status: Operational",
+        "Model availability: 3 of 5 active",
+        "Quota usage: 85% (8,500 / 10,000 requests)",
+        "Connection: Online"
+      ],
+      "channels": ["Persistent UI element (badge, indicator, dashboard widget)"]
+    },
+
+    "result_notification": {
+      "type": "result",
+      "classification": "Notification",
+      "severity": null,
+      "purpose": "Inform users about important events, changes, or announcements. Reaches users through multiple channels.",
+      "examples": [
+        "Scheduled maintenance on March 5, 2–4 AM CET",
+        "Model gpt-3.5-turbo will be deprecated on April 15",
+        "Platform outage: Image generation service unavailable",
+        "New feature: Custom fine-tuning now available"
+      ],
+      "channels": ["Banner", "Dashboard", "Email"],
+      "continueWith": {
+        "treeId": "notification-severity",
+        "treeFile": "decision-tree_notification-severity.json",
+        "reason": "Notifications require a severity classification to determine urgency, channel behavior, and escalation timeline."
+      }
+    }
+  }
+}

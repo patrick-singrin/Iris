@@ -1,0 +1,266 @@
+{
+  "id": "notification-severity",
+  "name": "Notification Severity Classification",
+  "description": "Determines the severity level (CRITICAL / HIGH / MEDIUM / LOW) for events classified as Notification. Use after completing the Information Type classification.",
+  "version": "1.0.0",
+  "entryNode": "start",
+  "nodes": {
+    "start": {
+      "type": "question",
+      "text": "Is this happening now or planned for later?",
+      "options": [
+        { "label": "Now", "description": "Currently happening or just happened", "next": "now_platform" },
+        { "label": "Planned for later", "description": "Scheduled change, upcoming deadline, future event", "next": "future_leadtime" }
+      ]
+    },
+
+    "now_platform": {
+      "type": "question",
+      "text": "Is the entire platform down?",
+      "description": "All services unavailable, no user can work at all",
+      "options": [
+        { "label": "Yes", "next": "r_now_critical_outage" },
+        { "label": "No", "next": "now_security" }
+      ]
+    },
+    "now_security": {
+      "type": "question",
+      "text": "Is this a security or compliance issue?",
+      "description": "e.g. data breach, compromised credentials, compliance violation",
+      "options": [
+        { "label": "Yes", "next": "r_now_critical_security" },
+        { "label": "No", "next": "now_impact" }
+      ]
+    },
+    "now_impact": {
+      "type": "question",
+      "text": "Can users still do their work?",
+      "options": [
+        { "label": "No, they're blocked", "description": "Users cannot complete their tasks at all", "next": "now_blocked_scope" },
+        { "label": "Partially — it's degraded", "description": "Users can work but with errors, slowness, or reduced quality", "next": "now_degraded_scope" },
+        { "label": "Yes, no impact on current work", "description": "Existing functionality is unaffected", "next": "now_action" }
+      ]
+    },
+    "now_blocked_scope": {
+      "type": "question",
+      "text": "How many users are affected?",
+      "options": [
+        { "label": "Many users", "description": "Significant portion of the user base", "next": "r_now_high_blocked_many" },
+        { "label": "Few users", "description": "Limited to specific users or teams", "next": "r_now_medium_blocked_few" }
+      ]
+    },
+    "now_degraded_scope": {
+      "type": "question",
+      "text": "How many users are affected?",
+      "options": [
+        { "label": "Many users", "description": "Significant portion of the user base", "next": "r_now_high_degraded_many" },
+        { "label": "Few users", "description": "Limited to specific users or teams", "next": "r_now_medium_degraded_few" }
+      ]
+    },
+    "now_action": {
+      "type": "question",
+      "text": "Do users need to do something?",
+      "description": "e.g. update configuration, migrate data, accept new terms",
+      "options": [
+        { "label": "Yes", "next": "r_now_medium_action" },
+        { "label": "No, just informational", "next": "r_now_low_info" }
+      ]
+    },
+
+    "future_leadtime": {
+      "type": "question",
+      "text": "How much notice do users have?",
+      "options": [
+        { "label": "Less than 24 hours", "next": "f24_platform" },
+        { "label": "1–7 days", "next": "f7_platform" },
+        { "label": "More than 7 days", "next": "f30_platform" }
+      ]
+    },
+
+    "f24_platform": {
+      "type": "question",
+      "text": "Will the entire platform be down?",
+      "options": [
+        { "label": "Yes", "next": "r_f24_critical_outage" },
+        { "label": "No", "next": "f24_security" }
+      ]
+    },
+    "f24_security": {
+      "type": "question",
+      "text": "Is this a security or compliance change?",
+      "options": [
+        { "label": "Yes", "next": "r_f24_critical_security" },
+        { "label": "No", "next": "f24_impact" }
+      ]
+    },
+    "f24_impact": {
+      "type": "question",
+      "text": "Will users be able to do their work?",
+      "options": [
+        { "label": "No, they'll be blocked", "next": "f24_blocked_scope" },
+        { "label": "Partially — it'll be degraded", "next": "f24_degraded_scope" },
+        { "label": "Yes, no impact", "next": "f24_action" }
+      ]
+    },
+    "f24_blocked_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f24_critical_blocked_many" },
+        { "label": "Few users", "next": "r_f24_high_blocked_few" }
+      ]
+    },
+    "f24_degraded_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f24_critical_degraded_many" },
+        { "label": "Few users", "next": "r_f24_high_degraded_few" }
+      ]
+    },
+    "f24_action": {
+      "type": "question",
+      "text": "Do users need to do something to prepare?",
+      "options": [
+        { "label": "Yes", "next": "r_f24_high_action" },
+        { "label": "No, just informational", "next": "r_f24_low_info" }
+      ]
+    },
+
+    "f7_platform": {
+      "type": "question",
+      "text": "Will the entire platform be down?",
+      "options": [
+        { "label": "Yes", "next": "r_f7_high_outage" },
+        { "label": "No", "next": "f7_security" }
+      ]
+    },
+    "f7_security": {
+      "type": "question",
+      "text": "Is this a security or compliance change?",
+      "options": [
+        { "label": "Yes", "next": "r_f7_high_security" },
+        { "label": "No", "next": "f7_impact" }
+      ]
+    },
+    "f7_impact": {
+      "type": "question",
+      "text": "Will users be able to do their work?",
+      "options": [
+        { "label": "No, they'll be blocked", "next": "f7_blocked_scope" },
+        { "label": "Partially — it'll be degraded", "next": "f7_degraded_scope" },
+        { "label": "Yes, no impact", "next": "f7_action" }
+      ]
+    },
+    "f7_blocked_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f7_high_blocked_many" },
+        { "label": "Few users", "next": "r_f7_medium_blocked_few" }
+      ]
+    },
+    "f7_degraded_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f7_high_degraded_many" },
+        { "label": "Few users", "next": "r_f7_medium_degraded_few" }
+      ]
+    },
+    "f7_action": {
+      "type": "question",
+      "text": "Do users need to do something to prepare?",
+      "options": [
+        { "label": "Yes", "next": "r_f7_medium_action" },
+        { "label": "No, just informational", "next": "r_f7_low_info" }
+      ]
+    },
+
+    "f30_platform": {
+      "type": "question",
+      "text": "Will the entire platform be down?",
+      "options": [
+        { "label": "Yes", "next": "r_f30_medium_outage" },
+        { "label": "No", "next": "f30_security" }
+      ]
+    },
+    "f30_security": {
+      "type": "question",
+      "text": "Is this a security or compliance change?",
+      "options": [
+        { "label": "Yes", "next": "r_f30_medium_security" },
+        { "label": "No", "next": "f30_impact" }
+      ]
+    },
+    "f30_impact": {
+      "type": "question",
+      "text": "Will users be able to do their work?",
+      "options": [
+        { "label": "No, they'll be blocked", "next": "f30_blocked_scope" },
+        { "label": "Partially — it'll be degraded", "next": "f30_degraded_scope" },
+        { "label": "Yes, no impact", "next": "f30_action" }
+      ]
+    },
+    "f30_blocked_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f30_medium_blocked_many" },
+        { "label": "Few users", "next": "r_f30_low_blocked_few" }
+      ]
+    },
+    "f30_degraded_scope": {
+      "type": "question",
+      "text": "How many users will be affected?",
+      "options": [
+        { "label": "Many users", "next": "r_f30_medium_degraded_many" },
+        { "label": "Few users", "next": "r_f30_low_degraded_few" }
+      ]
+    },
+    "f30_action": {
+      "type": "question",
+      "text": "Do users need to do something to prepare?",
+      "options": [
+        { "label": "Yes", "next": "r_f30_low_action" },
+        { "label": "No, just informational", "next": "r_f30_low_info" }
+      ]
+    },
+
+    "r_now_critical_outage":       { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Complete platform outage — NOW" },
+    "r_now_critical_security":     { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Security/compliance issue — NOW" },
+    "r_now_high_blocked_many":     { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Blocking — many users — NOW" },
+    "r_now_high_degraded_many":    { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Degraded — many users — NOW" },
+    "r_now_medium_blocked_few":    { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Blocking — few users — NOW" },
+    "r_now_medium_degraded_few":   { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Degraded — few users — NOW" },
+    "r_now_medium_action":         { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Non-blocking, action needed — NOW" },
+    "r_now_low_info":              { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Informational only — NOW" },
+
+    "r_f24_critical_outage":       { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Complete outage — <24h notice", "escalation": true },
+    "r_f24_critical_security":     { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Security/compliance — <24h notice", "escalation": true },
+    "r_f24_critical_blocked_many": { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Blocking — many users — <24h notice", "escalation": true },
+    "r_f24_critical_degraded_many":{ "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Degraded — many users — <24h notice", "escalation": true },
+    "r_f24_high_blocked_few":      { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Blocking — few users — <24h notice", "escalation": true },
+    "r_f24_high_degraded_few":     { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Degraded — few users — <24h notice", "escalation": true },
+    "r_f24_high_action":           { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Non-blocking, action needed — <24h notice", "escalation": true },
+    "r_f24_low_info":              { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Informational only — <24h notice" },
+
+    "r_f7_high_outage":            { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Complete outage — 1–7 days notice", "escalation": true },
+    "r_f7_high_security":          { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Security/compliance — 1–7 days notice", "escalation": true },
+    "r_f7_high_blocked_many":      { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Blocking — many users — 1–7 days notice", "escalation": true },
+    "r_f7_high_degraded_many":     { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Degraded — many users — 1–7 days notice", "escalation": true },
+    "r_f7_medium_blocked_few":     { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Blocking — few users — 1–7 days notice", "escalation": true },
+    "r_f7_medium_degraded_few":    { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Degraded — few users — 1–7 days notice", "escalation": true },
+    "r_f7_medium_action":          { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Non-blocking, action needed — 1–7 days notice", "escalation": true },
+    "r_f7_low_info":               { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Informational only — 1–7 days notice" },
+
+    "r_f30_medium_outage":         { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Complete outage — >7 days notice", "escalation": true },
+    "r_f30_medium_security":       { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Security/compliance — >7 days notice", "escalation": true },
+    "r_f30_medium_blocked_many":   { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Blocking — many users — >7 days notice", "escalation": true },
+    "r_f30_medium_degraded_many":  { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Degraded — many users — >7 days notice", "escalation": true },
+    "r_f30_low_blocked_few":       { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Blocking — few users — >7 days notice", "escalation": true },
+    "r_f30_low_degraded_few":      { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Degraded — few users — >7 days notice", "escalation": true },
+    "r_f30_low_action":            { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Non-blocking, action needed — >7 days notice", "escalation": true },
+    "r_f30_low_info":              { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Informational only — >7 days notice" }
+  }
+}

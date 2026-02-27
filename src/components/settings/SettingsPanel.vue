@@ -15,9 +15,6 @@ const LOCAL_TEMPLATE = `# Product Context
 ## Domain Description
 [Brief description of what your product does and who uses it]
 
-## Tone & Voice
-[How should the product communicate? Formal/informal? Technical level?]
-
 ## Key Terminology
 [Product-specific terms, feature names, technical concepts]
 

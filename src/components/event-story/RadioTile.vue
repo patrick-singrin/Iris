@@ -121,6 +121,6 @@ function handleClick() {
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #747478;
+  color: var(--telekom-color-ui-strong, #747478);
 }
 </style>

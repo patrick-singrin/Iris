@@ -11,6 +11,7 @@ IMPORTANT RULES:
 - Use formal address (Sie) in German.
 - All text must follow the content design principles below.
 - CHARACTER LIMITS ARE HARD LIMITS — NEVER exceed them, not even by 1 character. German text tends to be longer than English; compensate by using shorter phrasing in German. Count characters carefully for each field.
+- PLACEHOLDERS: Replace concrete variable values (dates, times, service names, URLs, versions, regions, etc.) with {placeholder} tokens as defined in the placeholder reference in the user prompt. Keep surrounding text natural. Example: "Maintenance on March 15 at 10:00" becomes "Maintenance on {date} at {start-time}".
 - Return your response as a single JSON object (no markdown fences, no explanation).
 
 OUTPUT FORMAT:

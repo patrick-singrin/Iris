@@ -2,11 +2,13 @@
 import { computed, ref } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
 import { useAppStore } from '@/stores/appStore'
+import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { downloadMarkdown } from '@/services/markdownExport'
 import { useI18n } from '@/i18n'
 
 const { events, refreshEvents, deleteEvent } = useEventStore()
 const { viewEvent, setView } = useAppStore()
+const { resetSession } = useEventStoryStore()
 const { t } = useI18n()
 refreshEvents()
 
@@ -161,7 +163,7 @@ function getChannelShortName(channel: string): string {
       </div>
       <scale-button
         variant="primary"
-        @click="setView('event-story')"
+        @click="resetSession(); setView('event-story')"
       >
         <scale-icon-action-add size="20" />
         {{ t('events.newEvent') }}
@@ -294,7 +296,7 @@ function getChannelShortName(channel: string): string {
 
 <style scoped>
 .documentation {
-  background: #ffffff;
+  background: var(--telekom-color-background-surface, #ffffff);
   margin: -32px -32px 0;
   padding: 32px;
   display: flex;
@@ -319,7 +321,7 @@ function getChannelShortName(channel: string): string {
   font-size: 32px;
   font-weight: 800;
   line-height: 40px;
-  color: #000000;
+  color: var(--telekom-color-text-and-icon-standard, #000000);
   margin: 0;
 }
 
@@ -327,7 +329,7 @@ function getChannelShortName(channel: string): string {
   font-size: 16px;
   font-weight: 400;
   line-height: 22.4px;
-  color: #000000;
+  color: var(--telekom-color-text-and-icon-standard, #000000);
   margin: 0;
 }
 

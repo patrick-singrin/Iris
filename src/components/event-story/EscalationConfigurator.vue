@@ -222,7 +222,7 @@ async function generateStep(stepId: string) {
   height: 24px;
   border-radius: 50%;
   background: var(--telekom-color-primary-standard, #e20074);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -286,7 +286,7 @@ async function generateStep(stepId: string) {
 
 .escalation-step__confirm-delete {
   background: var(--telekom-color-functional-danger-standard, #e82010);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   border: none;
   border-radius: 6px;
   padding: 6px 14px;

@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import ClassificationTile from './ClassificationTile.vue'
 import ReasoningTile from './ReasoningTile.vue'
 import ProgressBar from './ProgressBar.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useProductContextStore } from '@/stores/productContextStore'
 import { useI18n } from '@/i18n'
@@ -23,7 +24,7 @@ const {
 const isReadOnly = computed(() => phase.value === 'text-generation')
 
 const { state: pcState } = useProductContextStore()
-const hasProductContent = computed(() => pcState.localContent.trim().length > 0)
+const hasProductContent = computed(() => pcState.documents.length > 0)
 
 function handleProductContextToggle(e: Event) {
   const customEvent = e as CustomEvent
@@ -31,7 +32,7 @@ function handleProductContextToggle(e: Event) {
 }
 
 const infoIconRef = ref<HTMLElement | null>(null)
-const tooltipStyle = ref({ top: '0px', left: '0px' })
+const tooltipStyle = ref<Record<string, string>>({ top: '0px', left: '0px' })
 const tooltipVisible = ref(false)
 
 function showTooltip() {
@@ -140,7 +141,7 @@ function handleApply() {
           <scale-switch
             :checked="pcState.enabled"
             :disabled="!hasProductContent"
-            label="Product Context"
+            :label="t('story.productContext')"
             size="small"
             @scaleChange="handleProductContextToggle"
           />
@@ -151,11 +152,7 @@ function handleApply() {
             @mouseenter="showTooltip"
             @mouseleave="hideTooltip"
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M8 7v4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <circle cx="8" cy="4.75" r="0.75" fill="currentColor"/>
-            </svg>
+            <AppIcon name="info" :size="12" />
           </span>
         </div>
         <ReasoningTile
@@ -270,7 +267,7 @@ function handleApply() {
   width: 260px;
   padding: 10px 12px;
   background: #1b1b1b;
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   font-family: 'TeleNeo', sans-serif;
   font-size: 13px;
   line-height: 1.45;

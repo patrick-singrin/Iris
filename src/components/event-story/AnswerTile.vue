@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppIcon from '@/components/shared/AppIcon.vue'
+
 defineProps<{
   questionText: string
   answerText: string
@@ -9,9 +11,7 @@ defineProps<{
 <template>
   <div class="answer-tile">
     <div class="answer-tile__icon">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path d="M3 7l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
+      <AppIcon name="check" :size="14" />
     </div>
     <div class="answer-tile__content">
       <span class="answer-tile__question">{{ questionText }}</span>

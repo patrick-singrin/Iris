@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
+
 const emit = defineEmits<{
   'select-prompt': [text: string]
 }>()
 
-const examplePrompts = [
-  'Write a page title and subtitle for the Settings page',
-  'I need a button label for saving changes vs. publishing',
-  'Optimize this empty state: "No data available"',
-  'Write placeholder text and labels for a search form',
-]
+const examplePrompts = computed(() => [
+  t('chat.welcome.prompt1'),
+  t('chat.welcome.prompt2'),
+  t('chat.welcome.prompt3'),
+  t('chat.welcome.prompt4'),
+])
 </script>
 
 <template>
@@ -16,10 +21,10 @@ const examplePrompts = [
     <div class="chat-welcome__content">
       <div class="chat-welcome__icon">
         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <rect width="48" height="48" rx="12" fill="#e20074" opacity="0.1" />
+          <rect width="48" height="48" rx="12" fill="currentColor" opacity="0.1" />
           <path
             d="M14 16h20v2H14zm0 6h14v2H14zm0 6h18v2H14zm22-10v14l-4-3H16"
-            stroke="#e20074"
+            stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -27,13 +32,12 @@ const examplePrompts = [
           />
         </svg>
       </div>
-      <h2 class="chat-welcome__title">What product copy do you need?</h2>
+      <h2 class="chat-welcome__title">{{ t('chat.welcome.title') }}</h2>
       <p class="chat-welcome__subtitle">
-        Describe the UI element or paste existing text to optimize.
-        I'll generate bilingual EN/DE suggestions following our Content Design Principles.
+        {{ t('chat.welcome.subtitle') }}
       </p>
       <div class="chat-welcome__prompts">
-        <p class="chat-welcome__prompts-label">Try an example:</p>
+        <p class="chat-welcome__prompts-label">{{ t('chat.welcome.tryExample') }}</p>
         <div class="chat-welcome__chips">
           <button
             v-for="prompt in examplePrompts"
@@ -65,6 +69,7 @@ const examplePrompts = [
 
 .chat-welcome__icon {
   margin-bottom: 16px;
+  color: var(--telekom-color-primary-standard, #e20074);
 }
 
 .chat-welcome__title {

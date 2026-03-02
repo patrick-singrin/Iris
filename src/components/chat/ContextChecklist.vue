@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import type { ChecklistItem, ChecklistCategory } from '@/types/chat'
 import type { LanguagePreference } from '@/stores/chatStore'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   items: ChecklistItem[]
@@ -13,17 +16,17 @@ const emit = defineEmits<{
   'update:languagePreference': [value: LanguagePreference]
 }>()
 
-const categories: { key: ChecklistCategory; label: string }[] = [
-  { key: 'content-type', label: 'Content Type' },
-  { key: 'context', label: 'Context' },
-  { key: 'preferences', label: 'Preferences' },
-]
+const categories = computed<{ key: ChecklistCategory; label: string }[]>(() => [
+  { key: 'content-type', label: t('chat.contentType') },
+  { key: 'context', label: t('chat.context') },
+  { key: 'preferences', label: t('chat.preferences') },
+])
 
-const languageOptions: { value: LanguagePreference; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'de', label: 'Deutsch' },
-  { value: 'both', label: 'Both' },
-]
+const languageOptions = computed<{ value: LanguagePreference; label: string }[]>(() => [
+  { value: 'en', label: t('chat.langEnglish') },
+  { value: 'de', label: t('chat.langDeutsch') },
+  { value: 'both', label: t('chat.langBoth') },
+])
 
 const progressPercent = computed(() =>
   props.progress.total > 0
@@ -43,16 +46,16 @@ function selectLanguage(lang: LanguagePreference) {
 <template>
   <div class="context-checklist">
     <div class="context-checklist__card">
-      <h3 class="context-checklist__title">Context Guide</h3>
+      <h3 class="context-checklist__title">{{ t('chat.contextGuide') }}</h3>
       <p class="context-checklist__subtitle">
-        Mention these details for better results
+        {{ t('chat.contextSubtitle') }}
       </p>
 
       <!-- Progress -->
       <div class="context-checklist__progress">
         <div class="context-checklist__progress-text">
           <span class="context-checklist__progress-count">{{ progress.checked }}</span>
-          / {{ progress.total }} provided
+          / {{ progress.total }} {{ t('chat.provided') }}
         </div>
         <div class="context-checklist__progress-bar">
           <div
@@ -113,8 +116,8 @@ function selectLanguage(lang: LanguagePreference) {
 
       <!-- Language selector -->
       <div class="context-checklist__language">
-        <h4 class="context-checklist__category-label">Language</h4>
-        <div class="context-checklist__lang-buttons" role="radiogroup" aria-label="Language preference">
+        <h4 class="context-checklist__category-label">{{ t('chat.language') }}</h4>
+        <div class="context-checklist__lang-buttons" role="radiogroup" :aria-label="t('chat.language')">
           <button
             v-for="opt in languageOptions"
             :key="opt.value"
@@ -284,7 +287,7 @@ function selectLanguage(lang: LanguagePreference) {
 
 .context-checklist__lang-btn--active {
   background: var(--telekom-color-primary-standard, #e20074);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   font-weight: 600;
 }
 </style>

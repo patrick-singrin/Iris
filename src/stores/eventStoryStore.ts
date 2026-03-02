@@ -13,7 +13,6 @@ import {
   deriveClassification,
   composeStory,
   assessChannelQuality,
-  fillItem,
   applyPatches,
   type StoryChecklistItem,
   type StoryClassification,
@@ -220,7 +219,7 @@ export function useEventStoryStore() {
     if (isExtracting.value) return false
     if (answers.value.length === 0) return false
     if (currentQuestion.value !== null) return false
-    // All 11 checklist items must be filled and verified
+    // All checklist items must be filled and verified (impact_scope is auto-derived from who_affected)
     return checklist.value.every(i => i.filled && i.verified)
   })
 
@@ -596,5 +595,9 @@ export function useEventStoryStore() {
     deleteStep: review.deleteStep,
     backToStep: review.backToStep,
     savedEventId: review.savedEventId,
+    skipAnalysis: review.skipAnalysis,
+    startHolisticAnalysis: review.startHolisticAnalysis,
+    applyFollowUpAnswer: review.applyFollowUpAnswer,
+    proceedToConfigure: review.proceedToConfigure,
   }
 }

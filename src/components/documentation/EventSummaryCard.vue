@@ -1,15 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { IrisEvent } from '@/types/event'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 defineProps<{
   event: IrisEvent
 }>()
 
-const impactLabels: Record<string, string> = {
-  blocked: 'Blocked',
-  degraded: 'Degraded',
-  no_impact: 'No impact',
-}
+const impactLabels = computed<Record<string, string>>(() => ({
+  blocked: t('detail.impact.blocked'),
+  degraded: t('detail.impact.degraded'),
+  no_impact: t('detail.impact.noImpact'),
+}))
 </script>
 
 <template>
@@ -30,21 +34,21 @@ const impactLabels: Record<string, string> = {
 
     <div class="event-card__body">
       <p class="event-card__description">
-        {{ event.description.whatHappened || 'No description provided' }}
+        {{ event.description.whatHappened || t('summary.noDescription') }}
       </p>
       <div class="event-card__meta">
         <span v-if="event.classification.channels.length > 0">
-          <strong>Channels:</strong> {{ event.classification.channels.join(', ') }}
+          <strong>{{ t('summary.channels') }}</strong> {{ event.classification.channels.join(', ') }}
         </span>
         <span v-if="event.description.userImpact">
-          <strong>User impact:</strong> {{ impactLabels[event.description.userImpact] || 'Unknown' }}
+          <strong>{{ t('summary.userImpact') }}</strong> {{ impactLabels[event.description.userImpact] || t('summary.unknown') }}
         </span>
       </div>
     </div>
 
     <!-- Generated text preview -->
     <details v-if="event.generatedText" class="event-card__text-preview">
-      <summary>Generated UI Text</summary>
+      <summary>{{ t('summary.generatedText') }}</summary>
       <div class="event-card__text-content">
         <div
           v-for="(fields, componentId) in event.generatedText"
@@ -55,9 +59,9 @@ const impactLabels: Record<string, string> = {
           <table>
             <thead>
               <tr>
-                <th>Field</th>
-                <th>English</th>
-                <th>German</th>
+                <th>{{ t('detail.field') }}</th>
+                <th>{{ t('detail.english') }}</th>
+                <th>{{ t('detail.german') }}</th>
               </tr>
             </thead>
             <tbody>

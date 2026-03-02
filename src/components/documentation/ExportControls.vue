@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { IrisEvent } from '@/types/event'
 import { downloadMarkdown } from '@/services/markdownExport'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   event: IrisEvent
@@ -14,7 +17,7 @@ function handleExport() {
 <template>
   <div class="export-controls">
     <scale-button size="small" variant="secondary" @click="handleExport">
-      Export as Markdown
+      {{ t('export.markdown') }}
     </scale-button>
   </div>
 </template>

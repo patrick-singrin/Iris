@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -32,17 +33,10 @@ const steps = [
         @click="toggle"
       >
         <span class="intro-card__toggle-label">{{ t('story.intro.howItWorks') }}</span>
-        <svg
-          class="intro-card__chevron"
-          :class="{ 'intro-card__chevron--up': expanded }"
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <AppIcon
+          name="chevron-down"
+          :class="['intro-card__chevron', { 'intro-card__chevron--up': expanded }]"
+        />
       </button>
 
       <div v-if="expanded" class="intro-card__list">

@@ -1,124 +1,139 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Defines available placeholders for event communication templates. Each placeholder represents a variable detail that changes per event instance. Backend services can use this to generate form fields for placeholder values.",
+  "description": "Defines available placeholders for event communication templates. Each placeholder represents a variable detail that changes per event instance. The examples array teaches the LLM which concrete values to replace with each placeholder.",
   "placeholders": [
     {
       "key": "service-name",
+      "placeholder": "{service-name}",
       "label": "Service name",
-      "labelDe": "Service-Name",
       "description": "The affected service, API, or product component",
+      "examples": ["MagentaCLOUD", "Identity API", "Payment Gateway"],
       "type": "text",
       "eventKinds": ["system_change", "error_issue", "process_update"]
     },
     {
       "key": "feature",
+      "placeholder": "{feature}",
       "label": "Feature",
-      "labelDe": "Funktion",
       "description": "The specific feature, page, or module affected",
+      "examples": ["Dashboard", "Login page", "File upload"],
       "type": "text",
       "eventKinds": null
     },
     {
       "key": "date",
+      "placeholder": "{date}",
       "label": "Date",
-      "labelDe": "Datum",
       "description": "A specific date (e.g. maintenance date, resolution date)",
+      "examples": ["March 15, 2026", "15.03.2026", "tomorrow"],
       "type": "date",
       "eventKinds": null
     },
     {
       "key": "start-time",
+      "placeholder": "{start-time}",
       "label": "Start time",
-      "labelDe": "Startzeit",
       "description": "Start of a maintenance or downtime window",
+      "examples": ["02:00 CET", "6:00 AM UTC", "10:00 Uhr"],
       "type": "time",
       "eventKinds": ["system_change"]
     },
     {
       "key": "end-time",
+      "placeholder": "{end-time}",
       "label": "End time",
-      "labelDe": "Endzeit",
       "description": "End of a maintenance or downtime window",
+      "examples": ["06:00 CET", "12:00 PM UTC", "14:00 Uhr"],
       "type": "time",
       "eventKinds": ["system_change"]
     },
     {
       "key": "timespan",
+      "placeholder": "{timespan}",
       "label": "Timespan",
-      "labelDe": "Zeitraum",
       "description": "Duration or time range of the event",
+      "examples": ["approximately 4 hours", "30 minutes", "2\u20133 days"],
       "type": "text",
       "eventKinds": ["system_change", "process_update"]
     },
     {
       "key": "deadline",
+      "placeholder": "{deadline}",
       "label": "Deadline",
-      "labelDe": "Frist",
       "description": "Deadline by which users must complete an action",
+      "examples": ["March 31, 2026", "end of Q1", "within 14 days"],
       "type": "date",
       "eventKinds": ["system_change", "process_update"]
     },
     {
       "key": "url",
+      "placeholder": "{url}",
       "label": "URL",
-      "labelDe": "URL",
-      "description": "A link users need to visit (e.g. new endpoint, documentation)",
+      "description": "A link users need to visit (e.g. status page, documentation)",
+      "examples": ["https://status.example.com", "https://docs.example.com/migration"],
       "type": "url",
       "eventKinds": null
     },
     {
       "key": "api-endpoint",
+      "placeholder": "{api-endpoint}",
       "label": "API endpoint",
-      "labelDe": "API-Endpunkt",
       "description": "The specific API endpoint or route affected",
+      "examples": ["/api/v2/users", "/auth/token", "POST /billing/invoices"],
       "type": "text",
       "eventKinds": ["system_change", "error_issue"]
     },
     {
       "key": "version",
+      "placeholder": "{version}",
       "label": "Version",
-      "labelDe": "Version",
       "description": "A version number (e.g. old version, new version)",
+      "examples": ["v2.4.1", "3.0", "API v2"],
       "type": "text",
       "eventKinds": ["system_change", "process_update"]
     },
     {
       "key": "error-message",
+      "placeholder": "{error-message}",
       "label": "Error message",
-      "labelDe": "Fehlermeldung",
       "description": "The error text that users see",
+      "examples": ["403 Forbidden", "Connection timed out", "Rate limit exceeded"],
       "type": "text",
       "eventKinds": ["error_issue"]
     },
     {
       "key": "size-limit",
+      "placeholder": "{size-limit}",
       "label": "Size limit",
-      "labelDe": "Größenlimit",
       "description": "A file size, rate limit, or threshold value",
+      "examples": ["10 MB", "1000 requests/min", "50 GB"],
       "type": "text",
       "eventKinds": ["error_issue"]
     },
     {
       "key": "workaround",
+      "placeholder": "{workaround}",
       "label": "Workaround",
-      "labelDe": "Übergangslösung",
       "description": "A temporary workaround or alternative approach",
+      "examples": ["use the legacy endpoint", "clear browser cache", "switch to region EU-West"],
       "type": "text",
       "eventKinds": ["error_issue"]
     },
     {
       "key": "affected-region",
+      "placeholder": "{affected-region}",
       "label": "Affected region",
-      "labelDe": "Betroffene Region",
       "description": "Geographic region or data center affected",
+      "examples": ["EU-West", "North America", "Frankfurt data center"],
       "type": "text",
       "eventKinds": ["system_change", "error_issue"]
     },
     {
       "key": "contact",
+      "placeholder": "{contact}",
       "label": "Contact",
-      "labelDe": "Kontakt",
       "description": "Contact information for support or escalation",
+      "examples": ["support@example.com", "Service Desk ext. 4711"],
       "type": "text",
       "eventKinds": null
     }

@@ -142,7 +142,7 @@ function formatTime(timestamp: string): string {
 .chat-message--user .chat-message__bubble {
   max-width: 70%;
   background: var(--telekom-color-primary-standard, #e20074);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   border-radius: 16px 16px 4px 16px;
 }
 

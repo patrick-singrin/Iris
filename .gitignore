@@ -35,3 +35,6 @@ screenshots
 
 # Local working files
 initial input/
+GLOBAL_CLAUDE.md
+.playwright-mcp/
+tests/results/

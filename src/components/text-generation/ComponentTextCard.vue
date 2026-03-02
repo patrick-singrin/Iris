@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import type { ComponentTemplate } from '@/types/contentTemplate'
 import type { GeneratedText } from '@/types/event'
 import FieldEditor from './FieldEditor.vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   component: ComponentTemplate
@@ -53,14 +56,14 @@ function getComponentData(): Record<string, { en: string; de: string }> | null {
           :variant="activeLang === 'en' ? 'primary' : 'secondary'"
           @click="activeLang = 'en'"
         >
-          English
+          {{ t('textGen.english') }}
         </scale-button>
         <scale-button
           size="small"
           :variant="activeLang === 'de' ? 'primary' : 'secondary'"
           @click="activeLang = 'de'"
         >
-          Deutsch
+          {{ t('textGen.deutsch') }}
         </scale-button>
       </div>
     </div>

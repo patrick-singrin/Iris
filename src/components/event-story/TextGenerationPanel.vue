@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TextOutputView from './TextOutputView.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useI18n } from '@/i18n'
 
@@ -11,10 +12,7 @@ const store = useEventStoryStore()
   <div class="text-gen-panel">
     <!-- Back link -->
     <button class="text-gen-panel__back" @click="store.backToCollect()">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" />
-      </svg>
+      <AppIcon name="chevron-left" :stroke-width="2" />
       {{ t('story.backToDetails') }}
     </button>
 

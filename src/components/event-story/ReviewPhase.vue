@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useI18n } from '@/i18n'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import AnalysisStep from './AnalysisStep.vue'
 import ConfigureStep from './ConfigureStep.vue'
 import TextOutputView from './TextOutputView.vue'
@@ -22,10 +23,7 @@ const SEVERITY_COLORS: Record<string, string> = {
     <div class="review-phase__container">
       <!-- Back link -->
       <button class="review-phase__back" @click="store.backToCollect()">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <AppIcon name="chevron-left" :stroke-width="2" />
         {{ t('story.backToDetails') }}
       </button>
 
@@ -41,7 +39,7 @@ const SEVERITY_COLORS: Record<string, string> = {
         <scale-tag
           v-if="store.classification.value.severity"
           size="small"
-          :style="{ '--background': SEVERITY_COLORS[store.classification.value.severity] || '#747478', color: '#fff' }"
+          :style="{ '--background': SEVERITY_COLORS[store.classification.value.severity] || 'var(--telekom-color-ui-strong)', color: 'var(--telekom-color-text-and-icon-white-standard)' }"
         >
           {{ store.classification.value.severity }}
         </scale-tag>

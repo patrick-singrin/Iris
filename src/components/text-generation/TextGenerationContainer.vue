@@ -8,6 +8,9 @@ import { createProvider } from '@/services/llm/providerFactory'
 import { buildSystemPrompt, buildUserPrompt } from '@/services/llm/promptBuilder'
 import { useProductContextStore } from '@/stores/productContextStore'
 import ComponentTextCard from './ComponentTextCard.vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   description: EventDescription
@@ -76,7 +79,7 @@ async function generate() {
     if (result.parsedFields) {
       setGeneratedText(result.parsedFields)
     } else {
-      error.value = 'Could not parse AI response. The raw response is shown below for manual editing.'
+      error.value = t('textGen.parseError')
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'An unknown error occurred'
@@ -88,10 +91,10 @@ async function generate() {
 
 <template>
   <div class="text-gen">
-    <h3>Generate UI Text</h3>
+    <h3>{{ t('textGen.title') }}</h3>
 
     <div v-if="components.length === 0" class="text-gen__empty">
-      No applicable components found for this event type.
+      {{ t('textGen.empty') }}
     </div>
 
     <template v-else>
@@ -107,7 +110,7 @@ async function generate() {
       <scale-notification
         v-if="hasEscalation"
         variant="informational"
-        heading="Escalation mode"
+        :heading="t('textGen.escalationMode')"
         opened
       >
         This scheduled event uses escalation. Text will be generated for {{ escalationSteps.length }} steps:
@@ -119,15 +122,15 @@ async function generate() {
           :disabled="isGenerating"
           @click="generate"
         >
-          {{ Object.keys(generatedText.data).length > 0 ? 'Regenerate' : 'Generate text' }}
+          {{ Object.keys(generatedText.data).length > 0 ? t('textGen.regenerate') : t('textGen.generateText') }}
         </scale-button>
-        <span v-if="isGenerating" class="text-gen__loading">Generating...</span>
+        <span v-if="isGenerating" class="text-gen__loading">{{ t('textGen.generating') }}</span>
       </div>
 
       <scale-notification
         v-if="error"
         variant="danger"
-        heading="Generation error"
+        :heading="t('textGen.generationError')"
         opened
       >
         {{ error }}
@@ -135,7 +138,7 @@ async function generate() {
 
       <!-- Raw response fallback -->
       <div v-if="rawResponse && !Object.keys(generatedText.data).length" class="text-gen__raw">
-        <h4>Raw AI Response</h4>
+        <h4>{{ t('textGen.rawResponse') }}</h4>
         <pre>{{ rawResponse }}</pre>
       </div>
 

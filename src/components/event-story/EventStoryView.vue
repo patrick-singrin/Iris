@@ -3,6 +3,7 @@ import { onMounted, onUnmounted } from 'vue'
 import StoryDialog from './StoryDialog.vue'
 import StoryPanel from './StoryPanel.vue'
 import TextGenerationPanel from './TextGenerationPanel.vue'
+import TextFeedbackChat from './TextFeedbackChat.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 
 const { phase } = useEventStoryStore()
@@ -30,13 +31,13 @@ onUnmounted(() => {
       </div>
     </template>
 
-    <!-- Text generation (two-column: output left, sidebar right) -->
+    <!-- Text generation (two-column: output left, feedback chat right) -->
     <template v-else-if="phase === 'text-generation'">
       <div class="event-story-view__main">
         <TextGenerationPanel />
       </div>
       <div class="event-story-view__sidebar">
-        <StoryPanel />
+        <TextFeedbackChat />
       </div>
     </template>
   </div>

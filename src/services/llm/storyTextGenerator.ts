@@ -13,7 +13,7 @@ import { useProductContextStore } from '@/stores/productContextStore'
 import type { StoryChecklistItem, StoryClassification } from '@/data/story-questions'
 import type { EscalationStep } from '@/types/event'
 import type { ComponentTemplate } from '@/types/contentTemplate'
-import { buildPlaceholderReference, formatPlaceholderList } from '@/data/placeholders'
+import { buildPlaceholderReference } from '@/data/placeholders'
 
 // ---------------------------------------------------------------------------
 // Story-specific user prompt builder
@@ -44,10 +44,12 @@ function buildStoryUserPrompt(
 
   sections.push('')
   sections.push('## Placeholder Instructions')
-  sections.push('The narrative may contain {placeholders} in curly braces. These represent variable values that change per event instance.')
-  sections.push('PRESERVE all {placeholders} exactly as they appear in the narrative. Do NOT replace them with actual values.')
-  sections.push(`Available placeholders: ${formatPlaceholderList()}`)
-  sections.push(`Full reference: ${buildPlaceholderReference()}`)
+  sections.push('IMPORTANT: In the generated channel text, REPLACE concrete values with {placeholders}.')
+  sections.push('The narrative above contains real values — identify dates, times, service names, URLs, versions, regions, etc. and substitute the matching placeholder token.')
+  sections.push('Only use placeholders from the reference below. Do NOT invent new placeholder keys.')
+  sections.push('')
+  sections.push('Placeholder reference:')
+  sections.push(buildPlaceholderReference())
 
   sections.push('')
   sections.push('## Classification')

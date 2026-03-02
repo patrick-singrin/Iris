@@ -1,12 +1,15 @@
 import { reactive, watch } from 'vue'
 
-export type LLMProviderType = 'anthropic' | 'lmstudio'
+export type LLMProviderType = 'anthropic' | 'lmstudio' | 'llmhub'
 
 export interface SettingsState {
   provider: LLMProviderType
   anthropicApiKey: string
   anthropicModel: string
   lmStudioEndpoint: string
+  llmHubEndpoint: string
+  llmHubApiKey: string
+  llmHubModel: string
 }
 
 const STORAGE_KEY = 'iris-settings'
@@ -17,6 +20,9 @@ function loadSettings(): SettingsState {
     anthropicApiKey: '',
     anthropicModel: 'claude-sonnet-4-20250514',
     lmStudioEndpoint: 'http://localhost:1234/v1',
+    llmHubEndpoint: 'https://llm-server.llmhub.t-systems.net/v2',
+    llmHubApiKey: '',
+    llmHubModel: 'Llama-3.3-70B-Instruct',
   }
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {

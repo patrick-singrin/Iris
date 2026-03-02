@@ -2,9 +2,11 @@
 import { computed } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
 import { useAppStore } from '@/stores/appStore'
+import { useI18n } from '@/i18n'
 import { downloadMarkdown } from '@/services/markdownExport'
 import { hasEscalationSteps, isEscalationEnabled } from '@/types/event'
 
+const { t } = useI18n()
 const { events } = useEventStore()
 const { selectedEventId, setView } = useAppStore()
 
@@ -14,65 +16,64 @@ const event = computed(() =>
 
 const isNotification = computed(() => event.value?.classification.type === 'Notification')
 
-const impactLabels: Record<string, string> = {
-  blocked: 'Blocked',
-  degraded: 'Degraded',
-  no_impact: 'No impact',
-}
+const impactLabels = computed<Record<string, string>>(() => ({
+  blocked: t('detail.impact.blocked'),
+  degraded: t('detail.impact.degraded'),
+  no_impact: t('detail.impact.noImpact'),
+}))
 
-const scopeLabels: Record<string, string> = {
-  widespread: 'Widespread',
-  limited: 'Limited',
-}
+const scopeLabels = computed<Record<string, string>>(() => ({
+  widespread: t('detail.scope.widespread'),
+  limited: t('detail.scope.limited'),
+}))
 
-const actionLabels: Record<string, string> = {
-  mandatory: 'Yes, mandatory',
-  recommended: 'Yes, recommended',
-  no: 'No action required',
-}
+const actionLabels = computed<Record<string, string>>(() => ({
+  mandatory: t('detail.action.mandatory'),
+  recommended: t('detail.action.recommended'),
+  no: t('detail.action.noRequired'),
+}))
 
-const workaroundLabels: Record<string, string> = {
-  yes_documented: 'Yes, documented',
-  yes_complex: 'Yes, but complex',
-  no: 'No workaround available',
-}
+const workaroundLabels = computed<Record<string, string>>(() => ({
+  yes_documented: t('detail.workaround.yesDocumented'),
+  yes_complex: t('detail.workaround.yesComplex'),
+  no: t('detail.workaround.none'),
+}))
 
-const leadTimeLabels: Record<string, string> = {
-  less_than_24h: 'Less than 24 hours',
-  '1_to_7_days': '1–7 days',
-  more_than_7_days: 'More than 7 days',
-}
+const leadTimeLabels = computed<Record<string, string>>(() => ({
+  less_than_24h: t('detail.leadTime.lessThan24h'),
+  '1_to_7_days': t('detail.leadTime.1to7days'),
+  more_than_7_days: t('detail.leadTime.moreThan7days'),
+}))
 
-// Type context labels for non-notifications
-const errorTypeLabels: Record<string, string> = {
-  system_error: 'System/server error',
-  permission_error: 'Permission/access error',
-  resource_error: 'Resource unavailable or exceeded',
-  network_error: 'Network/connection error',
-  input_error: 'Invalid user input',
-}
+const errorTypeLabels = computed<Record<string, string>>(() => ({
+  system_error: t('detail.errorType.system'),
+  permission_error: t('detail.errorType.permission'),
+  resource_error: t('detail.errorType.resource'),
+  network_error: t('detail.errorType.network'),
+  input_error: t('detail.errorType.input'),
+}))
 
-const validationTypeLabels: Record<string, string> = {
-  format: 'Format validation',
-  required: 'Required field',
-  range: 'Value range',
-  dependency: 'Field dependency',
-  uniqueness: 'Uniqueness check',
-}
+const validationTypeLabels = computed<Record<string, string>>(() => ({
+  format: t('detail.validationType.format'),
+  required: t('detail.validationType.required'),
+  range: t('detail.validationType.range'),
+  dependency: t('detail.validationType.dependency'),
+  uniqueness: t('detail.validationType.uniqueness'),
+}))
 
-const toneLabels: Record<string, string> = {
-  neutral: 'Neutral, factual',
-  apologetic: 'Apologetic',
-  urgent: 'Urgent',
-}
+const toneLabels = computed<Record<string, string>>(() => ({
+  neutral: t('detail.toneValue.neutral'),
+  apologetic: t('detail.toneValue.apologetic'),
+  urgent: t('detail.toneValue.urgent'),
+}))
 
-const typeContextTitle: Record<string, string> = {
-  error_warning: 'Error & Warning Context',
-  validation: 'Validation Context',
-  transactional_confirmation: 'Confirmation Context',
-  feedback: 'Feedback Context',
-  status_display: 'Status Display Context',
-}
+const typeContextTitle = computed<Record<string, string>>(() => ({
+  error_warning: t('detail.typeContext.errorWarning'),
+  validation: t('detail.typeContext.validation'),
+  transactional_confirmation: t('detail.typeContext.confirmation'),
+  feedback: t('detail.typeContext.feedback'),
+  status_display: t('detail.typeContext.statusDisplay'),
+}))
 
 function getChannelShortName(channel: string): string {
   return channel.replace(/\s*\(.*\)$/, '').trim()
@@ -88,7 +89,7 @@ function goBack() {
     <div class="event-detail__nav">
       <button class="event-detail__back" @click="goBack">
         <scale-icon-navigation-left size="16" />
-        Back to Events
+        {{ t('action.back') }}
       </button>
       <button
         v-if="event"
@@ -96,12 +97,12 @@ function goBack() {
         @click="downloadMarkdown(event)"
       >
         <scale-icon-action-download size="16" />
-        Export
+        {{ t('action.export') }}
       </button>
     </div>
 
     <div v-if="!event" class="event-detail__empty">
-      Event not found.
+      {{ t('detail.notFound') }}
     </div>
 
     <template v-else>
@@ -122,49 +123,49 @@ function goBack() {
       </div>
 
       <div class="event-detail__section">
-        <h2>Description</h2>
-        <p>{{ event.description.whatHappened || 'No description provided' }}</p>
+        <h2>{{ t('detail.description') }}</h2>
+        <p>{{ event.description.whatHappened || t('detail.noDescription') }}</p>
         <p v-if="event.description.additionalNotes">
           {{ event.description.additionalNotes }}
         </p>
       </div>
 
       <div class="event-detail__section">
-        <h2>Classification</h2>
+        <h2>{{ t('detail.classification') }}</h2>
         <div class="event-detail__grid">
           <div class="event-detail__field">
-            <span class="event-detail__label">Type</span>
+            <span class="event-detail__label">{{ t('detail.type') }}</span>
             <span>{{ event.classification.type }}</span>
           </div>
           <div class="event-detail__field">
-            <span class="event-detail__label">Severity</span>
-            <span>{{ event.classification.severity || 'N/A' }}</span>
+            <span class="event-detail__label">{{ t('detail.severity') }}</span>
+            <span>{{ event.classification.severity || t('detail.na') }}</span>
           </div>
           <div v-if="event.classification.severityExplanation" class="event-detail__field">
-            <span class="event-detail__label">Severity Explanation</span>
+            <span class="event-detail__label">{{ t('detail.severityExplanation') }}</span>
             <span>{{ event.classification.severityExplanation }}</span>
           </div>
           <div class="event-detail__field">
-            <span class="event-detail__label">Purpose</span>
+            <span class="event-detail__label">{{ t('detail.purpose') }}</span>
             <span>{{ event.classification.purpose }}</span>
           </div>
           <div v-if="event.classification.trigger" class="event-detail__field">
-            <span class="event-detail__label">Trigger</span>
+            <span class="event-detail__label">{{ t('detail.trigger') }}</span>
             <span>{{ event.classification.trigger }}</span>
           </div>
           <div class="event-detail__field">
-            <span class="event-detail__label">Escalation</span>
+            <span class="event-detail__label">{{ t('detail.escalation') }}</span>
             <span v-if="hasEscalationSteps(event.classification.escalation)">
-              {{ event.classification.escalation.length }} steps
+              {{ event.classification.escalation.length }} {{ t('detail.steps') }}
             </span>
-            <span v-else>{{ isEscalationEnabled(event.classification.escalation) ? 'Yes' : 'No' }}</span>
+            <span v-else>{{ isEscalationEnabled(event.classification.escalation) ? t('detail.yes') : t('detail.no') }}</span>
           </div>
         </div>
       </div>
 
       <!-- Escalation Timeline -->
       <div v-if="hasEscalationSteps(event.classification.escalation)" class="event-detail__section">
-        <h2>Escalation Timeline</h2>
+        <h2>{{ t('detail.escalationTimeline') }}</h2>
         <div class="event-detail__escalation-timeline">
           <div
             v-for="(step, i) in event.classification.escalation"
@@ -175,14 +176,14 @@ function goBack() {
             <div class="event-detail__escalation-info">
               <strong>{{ step.label }}</strong>
               <span class="event-detail__escalation-timing">{{ step.relativeTime }}</span>
-              <span v-if="step.tone" class="event-detail__escalation-tone">Tone: {{ step.tone }}</span>
+              <span v-if="step.tone" class="event-detail__escalation-tone">{{ t('detail.tone') }}: {{ step.tone }}</span>
             </div>
           </div>
         </div>
       </div>
 
       <div class="event-detail__section">
-        <h2>Channels</h2>
+        <h2>{{ t('detail.channels') }}</h2>
         <div class="event-detail__channel-tags">
           <scale-tag
             v-for="channel in event.classification.channels"
@@ -194,71 +195,71 @@ function goBack() {
 
       <!-- Impact Assessment (Notification only) -->
       <div v-if="isNotification" class="event-detail__section">
-        <h2>Impact Assessment</h2>
+        <h2>{{ t('detail.impactAssessment') }}</h2>
         <div class="event-detail__grid">
           <div class="event-detail__field">
-            <span class="event-detail__label">User Impact</span>
-            <span>{{ impactLabels[event.description.userImpact] || event.description.userImpact || 'N/A' }}</span>
+            <span class="event-detail__label">{{ t('detail.userImpact') }}</span>
+            <span>{{ impactLabels[event.description.userImpact] || event.description.userImpact || t('detail.na') }}</span>
           </div>
           <div v-if="event.description.userImpact && event.description.userImpact !== 'no_impact'" class="event-detail__field">
-            <span class="event-detail__label">User Scope</span>
-            <span>{{ scopeLabels[event.description.userScope] || event.description.userScope || 'N/A' }}</span>
+            <span class="event-detail__label">{{ t('detail.userScope') }}</span>
+            <span>{{ scopeLabels[event.description.userScope] || event.description.userScope || t('detail.na') }}</span>
           </div>
           <div v-if="event.description.whoAffected.length > 0" class="event-detail__field">
-            <span class="event-detail__label">Who Affected</span>
+            <span class="event-detail__label">{{ t('detail.whoAffected') }}</span>
             <span>{{ event.description.whoAffected.join(', ') }}{{ event.description.whoAffectedCustom ? ' (' + event.description.whoAffectedCustom + ')' : '' }}</span>
           </div>
           <div v-if="event.description.actionRequired" class="event-detail__field">
-            <span class="event-detail__label">Action Required</span>
+            <span class="event-detail__label">{{ t('detail.actionRequired') }}</span>
             <span>{{ actionLabels[event.description.actionRequired] || event.description.actionRequired }}</span>
           </div>
           <div v-if="event.description.actionDescription && event.description.actionRequired !== 'no'" class="event-detail__field">
-            <span class="event-detail__label">Action Description</span>
+            <span class="event-detail__label">{{ t('detail.actionDescription') }}</span>
             <span>{{ event.description.actionDescription }}</span>
           </div>
           <div v-if="event.description.userImpact && event.description.userImpact !== 'no_impact' && event.description.workaroundAvailable" class="event-detail__field">
-            <span class="event-detail__label">Workaround</span>
+            <span class="event-detail__label">{{ t('detail.workaround') }}</span>
             <span>{{ workaroundLabels[event.description.workaroundAvailable] || event.description.workaroundAvailable }}</span>
           </div>
           <div v-if="event.description.timing" class="event-detail__field">
-            <span class="event-detail__label">Timing</span>
-            <span>{{ event.description.timing === 'now' ? 'Happening now' : event.description.timing === 'scheduled' ? 'Scheduled' : event.description.timing }}</span>
+            <span class="event-detail__label">{{ t('detail.timing') }}</span>
+            <span>{{ event.description.timing === 'now' ? t('detail.happeningNow') : event.description.timing === 'scheduled' ? t('detail.scheduled') : event.description.timing }}</span>
           </div>
           <div v-if="event.description.timing === 'scheduled' && event.description.leadTime" class="event-detail__field">
-            <span class="event-detail__label">Lead Time</span>
+            <span class="event-detail__label">{{ t('detail.leadTime') }}</span>
             <span>{{ leadTimeLabels[event.description.leadTime] || event.description.leadTime }}</span>
           </div>
           <div class="event-detail__field">
-            <span class="event-detail__label">Security / Compliance</span>
-            <span>{{ event.description.securityCompliance === true ? 'Yes' : event.description.securityCompliance === false ? 'No' : 'N/A' }}</span>
+            <span class="event-detail__label">{{ t('detail.securityCompliance') }}</span>
+            <span>{{ event.description.securityCompliance === true ? t('detail.yes') : event.description.securityCompliance === false ? t('detail.no') : t('detail.na') }}</span>
           </div>
         </div>
       </div>
 
       <!-- Type Context (Non-notification) -->
       <div v-if="!isNotification && event.typeContext" class="event-detail__section">
-        <h2>{{ typeContextTitle[event.typeContext.kind] || 'Type Context' }}</h2>
+        <h2>{{ typeContextTitle[event.typeContext.kind] || t('detail.type') }}</h2>
         <div class="event-detail__grid">
           <!-- Error & Warning -->
           <template v-if="event.typeContext.kind === 'error_warning'">
             <div v-if="event.typeContext.errorType" class="event-detail__field">
-              <span class="event-detail__label">Error Type</span>
+              <span class="event-detail__label">{{ t('detail.errorTypeLabel') }}</span>
               <span>{{ errorTypeLabels[event.typeContext.errorType] || event.typeContext.errorType }}</span>
             </div>
             <div v-if="event.typeContext.userAction" class="event-detail__field">
-              <span class="event-detail__label">User Was Trying To</span>
+              <span class="event-detail__label">{{ t('detail.userWasTryingTo') }}</span>
               <span>{{ event.typeContext.userAction }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">What Went Wrong</span>
-              <span>{{ event.typeContext.whatWentWrong || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.whatWentWrong') }}</span>
+              <span>{{ event.typeContext.whatWentWrong || t('detail.na') }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">Recovery Action</span>
-              <span>{{ event.typeContext.recoveryAction || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.recoveryAction') }}</span>
+              <span>{{ event.typeContext.recoveryAction || t('detail.na') }}</span>
             </div>
             <div v-if="event.typeContext.tone" class="event-detail__field">
-              <span class="event-detail__label">Tone</span>
+              <span class="event-detail__label">{{ t('detail.tone') }}</span>
               <span>{{ toneLabels[event.typeContext.tone] || event.typeContext.tone }}</span>
             </div>
           </template>
@@ -266,19 +267,19 @@ function goBack() {
           <!-- Validation -->
           <template v-if="event.typeContext.kind === 'validation'">
             <div class="event-detail__field">
-              <span class="event-detail__label">Field Name</span>
-              <span>{{ event.typeContext.fieldName || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.fieldName') }}</span>
+              <span>{{ event.typeContext.fieldName || t('detail.na') }}</span>
             </div>
             <div v-if="event.typeContext.validationType" class="event-detail__field">
-              <span class="event-detail__label">Validation Type</span>
+              <span class="event-detail__label">{{ t('detail.validationTypeLabel') }}</span>
               <span>{{ validationTypeLabels[event.typeContext.validationType] || event.typeContext.validationType }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">Constraint</span>
-              <span>{{ event.typeContext.constraint || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.constraint') }}</span>
+              <span>{{ event.typeContext.constraint || t('detail.na') }}</span>
             </div>
             <div v-if="event.typeContext.exampleValid" class="event-detail__field">
-              <span class="event-detail__label">Valid Example</span>
+              <span class="event-detail__label">{{ t('detail.validExample') }}</span>
               <span>{{ event.typeContext.exampleValid }}</span>
             </div>
           </template>
@@ -286,55 +287,55 @@ function goBack() {
           <!-- Transactional Confirmation -->
           <template v-if="event.typeContext.kind === 'transactional_confirmation'">
             <div class="event-detail__field">
-              <span class="event-detail__label">Action Completed</span>
-              <span>{{ event.typeContext.actionCompleted || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.actionCompleted') }}</span>
+              <span>{{ event.typeContext.actionCompleted || t('detail.na') }}</span>
             </div>
             <div v-if="event.typeContext.keyDetails" class="event-detail__field">
-              <span class="event-detail__label">Key Details</span>
+              <span class="event-detail__label">{{ t('detail.keyDetails') }}</span>
               <span>{{ event.typeContext.keyDetails }}</span>
             </div>
             <div v-if="event.typeContext.nextStep" class="event-detail__field">
-              <span class="event-detail__label">Next Step</span>
+              <span class="event-detail__label">{{ t('detail.nextStep') }}</span>
               <span>{{ event.typeContext.nextStep }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">Secondary CTA</span>
-              <span>{{ event.typeContext.hasSecondaryAction ? 'Yes' : 'No' }}</span>
+              <span class="event-detail__label">{{ t('detail.secondaryCta') }}</span>
+              <span>{{ event.typeContext.hasSecondaryAction ? t('detail.yes') : t('detail.no') }}</span>
             </div>
           </template>
 
           <!-- Feedback -->
           <template v-if="event.typeContext.kind === 'feedback'">
             <div class="event-detail__field">
-              <span class="event-detail__label">User Action</span>
-              <span>{{ event.typeContext.actionCompleted || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.userActionLabel') }}</span>
+              <span>{{ event.typeContext.actionCompleted || t('detail.na') }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">Undo Action</span>
-              <span>{{ event.typeContext.hasUndo ? 'Yes' : 'No' }}</span>
+              <span class="event-detail__label">{{ t('detail.undoAction') }}</span>
+              <span>{{ event.typeContext.hasUndo ? t('detail.yes') : t('detail.no') }}</span>
             </div>
           </template>
 
           <!-- Status Display -->
           <template v-if="event.typeContext.kind === 'status_display'">
             <div class="event-detail__field">
-              <span class="event-detail__label">System Component</span>
-              <span>{{ event.typeContext.systemComponent || 'N/A' }}</span>
+              <span class="event-detail__label">{{ t('detail.systemComponent') }}</span>
+              <span>{{ event.typeContext.systemComponent || t('detail.na') }}</span>
             </div>
             <div v-if="event.typeContext.possibleStates" class="event-detail__field">
-              <span class="event-detail__label">Possible States</span>
+              <span class="event-detail__label">{{ t('detail.possibleStates') }}</span>
               <span>{{ event.typeContext.possibleStates }}</span>
             </div>
             <div class="event-detail__field">
-              <span class="event-detail__label">Tooltip</span>
-              <span>{{ event.typeContext.hasTooltip ? 'Yes' : 'No' }}</span>
+              <span class="event-detail__label">{{ t('detail.hasTooltip') }}</span>
+              <span>{{ event.typeContext.hasTooltip ? t('detail.yes') : t('detail.no') }}</span>
             </div>
           </template>
         </div>
       </div>
 
       <div v-if="event.generatedText" class="event-detail__section">
-        <h2>Generated UI Text</h2>
+        <h2>{{ t('detail.generatedText') }}</h2>
         <div
           v-for="(fields, componentId) in event.generatedText"
           :key="componentId"
@@ -345,9 +346,9 @@ function goBack() {
             <table>
               <thead>
                 <tr>
-                  <th>Field</th>
-                  <th>English</th>
-                  <th>German</th>
+                  <th>{{ t('detail.field') }}</th>
+                  <th>{{ t('detail.english') }}</th>
+                  <th>{{ t('detail.german') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -481,7 +482,7 @@ function goBack() {
   height: 24px;
   border-radius: 50%;
   background: var(--telekom-color-primary-standard, #e20074);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
   display: flex;
   align-items: center;
   justify-content: center;

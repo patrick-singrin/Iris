@@ -182,7 +182,7 @@ describe('composeStory', () => {
     expect(story).toContain('Rotate your API keys')
   })
 
-  it('omits What to do section when action_required is "no"', () => {
+  it('omits What to do section when action_required is "no" with regular text', () => {
     const cl = makeChecklist({
       event_kind: 'system_change',
       action_required: 'no',
@@ -190,6 +190,17 @@ describe('composeStory', () => {
     })
     const story = composeStory(cl)
     expect(story).not.toContain('What to do:')
+  })
+
+  it('shows "No action required" when what_to_do is "no_action"', () => {
+    const cl = makeChecklist({
+      event_kind: 'system_change',
+      action_required: 'no',
+      what_to_do: 'no_action',
+    })
+    const story = composeStory(cl)
+    expect(story).toContain('What to do:')
+    expect(story).toContain('No action required')
   })
 
   it('includes security note when security is yes', () => {

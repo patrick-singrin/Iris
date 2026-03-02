@@ -16,9 +16,10 @@ import placeholderData from './placeholders.json'
 
 export interface PlaceholderDefinition {
   key: string
+  placeholder: string
   label: string
-  labelDe: string
   description: string
+  examples: string[]
   type: 'text' | 'date' | 'time' | 'url'
   /** Event kinds this placeholder applies to. null = universal (all event kinds). */
   eventKinds: string[] | null
@@ -50,16 +51,22 @@ export function getPlaceholdersForEventKind(eventKind: string): PlaceholderDefin
  */
 export function formatPlaceholderList(defs?: PlaceholderDefinition[]): string {
   const list = defs ?? placeholders
-  return list.map(p => `{${p.key}}`).join(', ')
+  return list.map(p => p.placeholder).join(', ')
 }
 
 /**
- * Build a detailed placeholder reference for inclusion in LLM system prompts.
- * Each line shows the placeholder key and its description.
+ * Build a detailed placeholder reference for inclusion in LLM prompts.
+ * Each entry shows the placeholder token, description, and example values
+ * so the LLM knows which concrete values to replace.
  */
 export function buildPlaceholderReference(defs?: PlaceholderDefinition[]): string {
   const list = defs ?? placeholders
   return list
-    .map(p => `  - {${p.key}} — ${p.description}`)
+    .map(p => {
+      const examplesText = p.examples.length
+        ? `\n    Replace values like: ${p.examples.map(e => `"${e}"`).join(', ')}`
+        : ''
+      return `  - ${p.placeholder} — ${p.description}${examplesText}`
+    })
     .join('\n')
 }

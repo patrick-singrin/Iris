@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoryChecklistItem } from '@/data/story-questions'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -61,10 +62,7 @@ const displayValue = computed(() => {
     <!-- Unverified state: multi-row with orange search icon -->
     <template v-else-if="status === 'unverified'">
       <div class="checklist-item__top">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="checklist-item__icon">
-          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5" fill="none" />
-          <path d="M10 10L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-        </svg>
+        <AppIcon name="search" class="checklist-item__icon" />
         <span class="checklist-item__question">{{ item.label }}</span>
       </div>
       <div v-if="displayValue" class="checklist-item__info">
@@ -78,9 +76,7 @@ const displayValue = computed(() => {
     <!-- Verified state: multi-row with green checkmark icon -->
     <template v-else>
       <div class="checklist-item__top">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="checklist-item__icon">
-          <path d="M2 8.5L6 12.5L14 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <AppIcon name="check" class="checklist-item__icon" />
         <span class="checklist-item__question">{{ item.label }}</span>
       </div>
       <div v-if="displayValue" class="checklist-item__info">
@@ -170,14 +166,14 @@ const displayValue = computed(() => {
 
 .checklist-item__info--empty {
   font-style: italic;
-  color: #747478;
+  color: var(--telekom-color-ui-strong, #747478);
 }
 
 .checklist-item__source {
   font-size: 12px;
   font-weight: 500;
   font-style: italic;
-  color: #747478;
+  color: var(--telekom-color-ui-strong, #747478);
   line-height: 16.2px;
   padding-left: 24px;
   margin-top: 0;

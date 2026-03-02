@@ -58,7 +58,7 @@ function evidenceFor(questionId: string, val: string, fallback: string): string 
 }
 
 /** Check if event_kind is one of the given known values, OR is freeform text (not a known enum). */
-function kindMatches(cl: StoryChecklistItem[], ...kinds: string[]): boolean {
+function _kindMatches(cl: StoryChecklistItem[], ...kinds: string[]): boolean {
   const kind = getItem(cl, 'event_kind')
   if (!kind.filled) return false
   const val = kind.value as string
@@ -66,6 +66,7 @@ function kindMatches(cl: StoryChecklistItem[], ...kinds: string[]): boolean {
   // Freeform text — follow the general (system_change) path
   return kinds.includes('system_change')
 }
+void _kindMatches // Reserved for future use
 
 // ---------------------------------------------------------------------------
 // Patch type — returned by mapAnswer for decoupled state mutation
@@ -227,34 +228,26 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       },
       mapAnswer: (opts, text) => {
         const combined = text ? [...opts, text] : opts
-        if (combined.length > 0) {
-          const labels = combined.map(v => evidenceFor('who_affected', v, v))
-          return [patch('who_affected', combined, labels.join(', '))]
-        }
-        return []
-      },
-    },
+        if (combined.length === 0) return []
 
-    // Q4: What is the scope of impact?
-    {
-      id: 'impact_scope',
-      text: t('sq.impactScope.text'),
-      helpText: t('sq.impactScope.help'),
-      type: 'single',
-      options: [
-        { value: 'widespread', label: t('sq.impactScope.widespread'), description: t('sq.impactScope.widespread.desc') },
-        { value: 'limited', label: t('sq.impactScope.limited'), description: t('sq.impactScope.limited.desc') },
-        { value: 'individual', label: t('sq.impactScope.individual'), description: t('sq.impactScope.individual.desc') },
-      ],
-      allowFreeform: false,
-      checklistTargets: ['impact_scope'],
-      condition: (cl) => {
-        return getItem(cl, 'who_affected').filled
-          && !getItem(cl, 'impact_scope').filled
-      },
-      mapAnswer: (opts) => {
-        const val = opts[0] || 'limited'
-        return [patch('impact_scope', val, evidenceFor('impact_scope', val, val))]
+        const patches: ChecklistPatch[] = []
+        const labels = combined.map(v => evidenceFor('who_affected', v, v))
+        patches.push(patch('who_affected', combined, labels.join(', ')))
+
+        // Auto-derive impact_scope from audience selection
+        // all_users → widespread, single_user/individual → individual, everything else → limited
+        let scope: string
+        if (combined.includes('all_users')) {
+          scope = 'widespread'
+        } else if (combined.includes('single_user')) {
+          scope = 'individual'
+        } else {
+          scope = 'limited'
+        }
+        patches.push(patch('impact_scope', scope, evidenceFor('who_affected', combined[0]!, combined[0]!), 'user',
+          t(`sq.impactScope.${scope === 'widespread' ? 'widespread' : scope === 'individual' ? 'individual' : 'limited'}`)))
+
+        return patches
       },
     },
 
@@ -274,7 +267,7 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       freeformPlaceholder: t('sq.errorLocation.freeform'),
       checklistTargets: ['error_location'],
       condition: (cl) => {
-        return getItem(cl, 'impact_scope').filled
+        return getItem(cl, 'who_affected').filled
           && !getItem(cl, 'error_location').filled
       },
       mapAnswer: (opts, text) => {
@@ -333,8 +326,14 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       freeformPlaceholder: t('sq.userImpact.freeform'),
       checklistTargets: ['user_impact'],
       condition: (cl) => {
-        return getItem(cl, 'field_context').filled
-          && !getItem(cl, 'user_impact').filled
+        if (getItem(cl, 'user_impact').filled) return false
+        const eventKind = getItem(cl, 'event_kind')
+        // For errors: wait for field_context to be filled first
+        if (eventKind.filled && eventKind.value === 'error_issue') {
+          return getItem(cl, 'field_context').filled
+        }
+        // For all other event types: show after who_affected is filled
+        return getItem(cl, 'who_affected').filled
       },
       mapAnswer: (opts, text) => {
         const val = opts[0] || text || 'no_impact'
@@ -386,7 +385,14 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       },
       mapAnswer: (opts, text) => {
         const val = opts[0] || text || 'no'
-        return [patch('action_required', val, evidenceFor('action_required', val, text || val))]
+        const patches = [patch('action_required', val, evidenceFor('action_required', val, text || val))]
+
+        // When no action is required, auto-fill what_to_do to avoid blocking interview completion
+        if (val === 'no') {
+          patches.push(patch('what_to_do', 'no_action', t('story.noActionRequired'), 'user', t('story.noActionRequired')))
+        }
+
+        return patches
       },
     },
 

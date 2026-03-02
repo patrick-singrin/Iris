@@ -101,7 +101,7 @@ const verifiedWidth = computed(() => {
 }
 
 .progress-bar__right {
-  color: #b63d00;
+  color: var(--telekom-color-text-and-icon-functional-warning, #b63d00);
 }
 
 .progress-bar__right strong {

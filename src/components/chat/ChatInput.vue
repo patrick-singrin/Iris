@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   disabled: boolean
@@ -48,7 +51,7 @@ defineExpose({ setAndSend })
         <div class="chat-input__field">
           <scale-textarea
             :value="inputText"
-            placeholder="Describe the UI element or paste text to optimize..."
+            :placeholder="t('chat.placeholder')"
             rows="2"
             resize="vertical"
             :disabled="disabled"
@@ -61,7 +64,7 @@ defineExpose({ setAndSend })
           :disabled="!inputText.trim() || disabled"
           @click="handleSend"
         >
-          Send
+          {{ t('chat.send') }}
         </scale-button>
       </div>
     </div>

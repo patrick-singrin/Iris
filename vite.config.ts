@@ -37,6 +37,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/lmstudio/, ''),
       },
+      '/api/llmhub': {
+        target: 'https://llm-server.llmhub.t-systems.net',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/llmhub/, '/v2'),
+      },
     },
   },
 })

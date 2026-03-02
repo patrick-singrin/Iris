@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   modelValue: 'de' | 'en'
 }>()
@@ -9,7 +13,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="lang-toggle" role="radiogroup" aria-label="Language">
+  <div class="lang-toggle" role="radiogroup" :aria-label="t('a11y.language')">
     <button
       class="lang-toggle__btn"
       :class="{ 'lang-toggle__btn--active': modelValue === 'de' }"
@@ -61,6 +65,6 @@ const emit = defineEmits<{
 
 .lang-toggle__btn--active {
   background: var(--telekom-color-primary-standard, #e20074);
-  color: #fff;
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
 }
 </style>

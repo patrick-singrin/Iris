@@ -14,8 +14,12 @@
 
 ### ~~Architecture: Replace `isProgrammaticUpdate` hack~~ (Done 2026-02-26) — see Completed section
 
-### Placeholder system (future template step)
-The placeholder infrastructure (`src/data/placeholders.ts`, `src/data/placeholders.json`) is built but unused. It's reserved for a future "Generate Template" feature where users can turn a completed narrative into a reusable template with `{service_name}`, `{date}`, etc. This hasn't been designed yet.
+### ~~Placeholder system for channel text~~ (Done 2026-03-02)
+- [x] Enriched `placeholders.json` with `placeholder` tokens and `examples` arrays; removed localized `labelDe` (placeholders are language-neutral)
+- [x] Updated `placeholders.ts` interface and `buildPlaceholderReference()` to include examples in LLM prompt
+- [x] Flipped text generator instructions from passive ("preserve") to active ("replace concrete values with placeholders")
+- [x] Added placeholder rule to system prompt in `promptBuilder.ts`
+- [x] Updated Decision #1 in `decisions.md`
 
 ### ~~Vite cache management~~ (Done 2026-02-26) — see Completed section
 

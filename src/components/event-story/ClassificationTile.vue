@@ -12,20 +12,20 @@ const props = defineProps<{
 }>()
 
 const SEVERITY_STYLES: Record<string, { bg: string; text: string }> = {
-  CRITICAL: { bg: '#fad2cf', text: '#c30a03' },
-  HIGH:     { bg: '#fee2d0', text: '#b63d00' },
-  MEDIUM:   { bg: '#fcefd3', text: '#ac5600' },
-  LOW:      { bg: '#d2eff4', text: '#00738a' },
+  CRITICAL: { bg: 'var(--telekom-color-functional-danger-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-danger)' },
+  HIGH:     { bg: 'var(--telekom-color-functional-warning-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-warning)' },
+  MEDIUM:   { bg: 'var(--telekom-color-additional-yellow-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-yellow)' },
+  LOW:      { bg: 'var(--telekom-color-additional-cyan-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-cyan)' },
 }
 
 const TYPE_TAG_STYLES: Record<string, { bg: string; text: string }> = {
-  Notification:      { bg: '#d8f1ec', text: '#177364' },
-  'Error or issue':  { bg: '#fad2cf', text: '#c30a03' },
-  'System change':   { bg: '#d2eff4', text: '#00738a' },
-  'Process update':  { bg: '#fcefd3', text: '#ac5600' },
+  Notification:      { bg: 'var(--telekom-color-additional-teal-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-teal)' },
+  'Error or issue':  { bg: 'var(--telekom-color-functional-danger-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-danger)' },
+  'System change':   { bg: 'var(--telekom-color-additional-cyan-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-cyan)' },
+  'Process update':  { bg: 'var(--telekom-color-additional-yellow-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-yellow)' },
 }
 
-const DEFAULT_TAG_STYLE = { bg: '#dfdfe1', text: '#000' }
+const DEFAULT_TAG_STYLE = { bg: 'var(--telekom-color-ui-faint)', text: 'var(--telekom-color-text-and-icon-standard)' }
 
 const typeTagStyle = computed(() => {
   if (!props.classification) return DEFAULT_TAG_STYLE

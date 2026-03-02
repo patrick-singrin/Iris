@@ -29,7 +29,6 @@ const {
   startFollowUpQueue,
   answerFollowUp,
   skipFollowUps,
-  resetSession,
 } = useEventStoryStore()
 
 // Track whether follow-up queue has been started (so we only start once)
@@ -49,6 +48,10 @@ function handleFollowUpAnswer(selectedOptions: string[], freeformText: string) {
 }
 
 function handleFollowUpSkip() {
+  skipFollowUps()
+}
+
+function handleAnalysisProceed() {
   skipFollowUps()
 }
 
@@ -117,12 +120,6 @@ watch(
   <div class="story-dialog">
     <!-- History area — scrollable list of past answers -->
     <div ref="historyRef" class="story-dialog__history">
-      <!-- New Event button — scrolls with history -->
-      <div class="story-dialog__toolbar">
-        <scale-button variant="secondary" size="small" @click="resetSession">
-          {{ t('story.newEvent') }}
-        </scale-button>
-      </div>
       <HistoryIntroCard />
       <HistoryItem
         v-for="(a, idx) in answers"
@@ -177,6 +174,23 @@ watch(
         <span class="thinking-card__text">{{ t('story.analyzingContext') }}</span>
       </div>
 
+      <!-- Analysis complete, no follow-up questions → show findings + proceed -->
+      <div v-else-if="analysisResult && !currentFollowUp && !followUpsDone" class="analysis-done-card">
+        <div v-if="analysisResult.findings?.length" class="story-dialog__findings">
+          <AnalysisFinding
+            v-for="(f, idx) in analysisResult.findings"
+            :key="idx"
+            :finding="f"
+          />
+        </div>
+        <p v-else class="analysis-done-card__message">{{ t('story.analysisAllGood') }}</p>
+        <div class="analysis-done-card__actions">
+          <scale-button @click="handleAnalysisProceed">
+            {{ t('story.proceedToGeneration') }}
+          </scale-button>
+        </div>
+      </div>
+
       <!-- Follow-up questions from analysis (one at a time) -->
       <template v-else-if="currentFollowUp">
         <!-- Findings summary above the first follow-up -->
@@ -210,14 +224,6 @@ watch(
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-
-/* Toolbar — New Event button + product context badge, inside the scroll area */
-.story-dialog__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
 }
 
 /* History — scrollable answer list, takes available space */
@@ -308,6 +314,32 @@ watch(
   font-weight: 400;
   line-height: 22.4px;
   color: var(--telekom-color-text-and-icon-standard, #000000);
+}
+
+/* Analysis done card — shown when analysis completes with no follow-ups */
+.analysis-done-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--telekom-color-background-surface, #fff);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.analysis-done-card__message {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--telekom-color-text-and-icon-additional, #6c6c6f);
+  margin: 0;
+}
+
+.analysis-done-card__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 @keyframes pulse-dot {

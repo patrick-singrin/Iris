@@ -70,11 +70,14 @@ export function deriveClassification(checklist: StoryChecklistItem[]): StoryClas
     const security = getItem(checklist, 'security')
 
     // Build ImpactFactors for severity matrix
+    // "Moment of occurrence" principle: always classify severity at the moment
+    // the event executes, not based on advance notice. Lead time is used only
+    // for escalation suggestions, not for reducing severity.
     const factors: ImpactFactors = {
       userImpact: (impact.filled ? impact.value as ImpactFactors['userImpact'] : '') || '',
       userScope: (scope.filled ? scope.value as ImpactFactors['userScope'] : '') || '',
-      timing: (timing.filled ? timing.value as ImpactFactors['timing'] : '') || '',
-      leadTime: timing.filled && timing.value === 'scheduled' ? '1_to_7_days' : '',
+      timing: 'now',
+      leadTime: '',
       securityCompliance: security.filled ? security.value === 'yes' : null,
       actionRequired: (action.filled ? action.value as ImpactFactors['actionRequired'] : '') || '',
     }
@@ -179,8 +182,12 @@ export function composeStory(checklist: StoryChecklistItem[]): string {
   // --- WHAT TO DO section ---
   const action = getItem(checklist, 'action_required')
   const whatToDo = getItem(checklist, 'what_to_do')
-  if (action.filled && action.value !== 'no' && whatToDo.filled && whatToDo.value) {
-    sections.push(`${t('sq.compose.section.whatToDo')}\n${t('sq.compose.usersNeedTo')} ${whatToDo.value}`)
+  if (whatToDo.filled && whatToDo.value) {
+    if (whatToDo.value === 'no_action') {
+      sections.push(`${t('sq.compose.section.whatToDo')}\n${t('story.noActionRequired')}`)
+    } else if (action.filled && action.value !== 'no') {
+      sections.push(`${t('sq.compose.section.whatToDo')}\n${t('sq.compose.usersNeedTo')} ${whatToDo.value}`)
+    }
   }
 
   return sections.join('\n\n')

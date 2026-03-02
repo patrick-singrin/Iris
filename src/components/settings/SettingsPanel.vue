@@ -1,66 +1,52 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useProductContextStore, type ProductContextMode, type ProductContextDocument } from '@/stores/productContextStore'
 import { createProvider } from '@/services/llm/providerFactory'
-import { renderMarkdown } from '@/utils/renderMarkdown'
+import { fetchLLMHubModels, type LLMHubModel } from '@/services/llm/llmHubProvider'
+import { useI18n } from '@/i18n'
+import ProductContextSection from './ProductContextSection.vue'
+
+const { t } = useI18n()
 
 const { state } = useSettingsStore()
-const { state: pcState, addDocument, removeDocument } = useProductContextStore()
-
-const fileInputRef = ref<HTMLInputElement | null>(null)
-
-// --- Document preview modal ---
-const previewDoc = ref<ProductContextDocument | null>(null)
-
-function openPreview(doc: ProductContextDocument) {
-  previewDoc.value = doc
-}
-
-function closePreview() {
-  previewDoc.value = null
-}
-
-const previewHtml = computed(() =>
-  previewDoc.value ? renderMarkdown(previewDoc.value.content) : '',
-)
-
-function handleModeChange(e: Event) {
-  const customEvent = e as CustomEvent
-  const value = customEvent.detail?.value as ProductContextMode | undefined
-  if (value) {
-    pcState.mode = value
-  }
-}
-
-function triggerFileUpload() {
-  fileInputRef.value?.click()
-}
-
-async function handleFileUpload(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = input.files
-  if (!files || files.length === 0) return
-
-  for (const file of Array.from(files)) {
-    const content = await file.text()
-    if (content.trim()) {
-      addDocument(file.name, content)
-    }
-  }
-  input.value = ''
-}
-
-function handleRemoveDocument(name: string) {
-  removeDocument(name)
-}
 
 const testStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
 const testMessage = ref('')
 
+// LLMHub model fetching
+const llmHubModels = ref<LLMHubModel[]>([])
+const modelFetchStatus = ref<'idle' | 'loading' | 'success' | 'error'>('idle')
+const modelFetchMessage = ref('')
+
+const reasoningModels = computed(() => llmHubModels.value.filter(m => m.category === 'reasoning'))
+const chatModels = computed(() => llmHubModels.value.filter(m => m.category === 'chat'))
+
+async function fetchModels() {
+  if (!state.llmHubApiKey) {
+    modelFetchStatus.value = 'error'
+    modelFetchMessage.value = 'Please enter an API key first.'
+    return
+  }
+  modelFetchStatus.value = 'loading'
+  modelFetchMessage.value = ''
+  try {
+    llmHubModels.value = await fetchLLMHubModels(state.llmHubEndpoint, state.llmHubApiKey)
+    modelFetchStatus.value = 'success'
+    modelFetchMessage.value = t('settings.modelsLoaded').replace('{count}', String(llmHubModels.value.length))
+  } catch (e) {
+    modelFetchStatus.value = 'error'
+    modelFetchMessage.value = e instanceof Error ? e.message : 'Unknown error'
+  }
+}
+
+function handleModelChange(e: Event) {
+  const value = (e as CustomEvent).detail?.value
+  if (value) state.llmHubModel = value
+}
+
 function handleProviderChange(e: Event) {
   const customEvent = e as CustomEvent
-  const value = customEvent.detail?.value as 'anthropic' | 'lmstudio' | undefined
+  const value = customEvent.detail?.value as 'anthropic' | 'lmstudio' | 'llmhub' | undefined
   if (value) {
     state.provider = value
     testStatus.value = 'idle'
@@ -96,62 +82,152 @@ async function testConnection() {
 
 <template>
   <div class="settings">
-    <h2>Settings</h2>
+    <h2>{{ t('settings.title') }}</h2>
 
     <div class="settings__section">
-      <h3>LLM Provider</h3>
+      <h3>{{ t('settings.llmProvider') }}</h3>
       <p class="settings__helper">
-        Select the AI provider for text generation. Settings are saved automatically.
+        {{ t('settings.llmProviderHelper') }}
       </p>
 
       <scale-dropdown-select
-        label="Provider"
+        :label="t('settings.provider')"
         :value="state.provider"
         @scale-change="handleProviderChange"
       >
         <scale-dropdown-select-item value="anthropic" :selected="state.provider === 'anthropic'">
-          Anthropic API (Claude)
+          {{ t('settings.anthropicApi') }}
         </scale-dropdown-select-item>
         <scale-dropdown-select-item value="lmstudio" :selected="state.provider === 'lmstudio'">
-          LM Studio (Local)
+          {{ t('settings.lmStudio') }}
+        </scale-dropdown-select-item>
+        <scale-dropdown-select-item value="llmhub" :selected="state.provider === 'llmhub'">
+          {{ t('settings.llmHub') }}
         </scale-dropdown-select-item>
       </scale-dropdown-select>
     </div>
 
     <!-- Anthropic Settings -->
     <div v-if="state.provider === 'anthropic'" class="settings__section">
-      <h3>Anthropic Configuration</h3>
+      <h3>{{ t('settings.anthropicConfig') }}</h3>
       <scale-text-field
-        label="API Key"
+        :label="t('settings.apiKey')"
         type="password"
         :value="state.anthropicApiKey"
         @scaleChange="(e: CustomEvent) => state.anthropicApiKey = e.detail.value ?? ''"
-        helper-text="Your Anthropic API key (starts with sk-ant-)"
+        :helper-text="t('settings.apiKeyHelper')"
       ></scale-text-field>
       <scale-text-field
-        label="Model"
+        :label="t('settings.model')"
         :value="state.anthropicModel"
         @scaleChange="(e: CustomEvent) => state.anthropicModel = e.detail.value ?? ''"
-        helper-text="Default: claude-sonnet-4-20250514"
+        :helper-text="t('settings.modelHelper')"
       ></scale-text-field>
     </div>
 
     <!-- LM Studio Settings -->
     <div v-if="state.provider === 'lmstudio'" class="settings__section">
-      <h3>LM Studio Configuration</h3>
+      <h3>{{ t('settings.lmStudioConfig') }}</h3>
       <scale-text-field
-        label="Endpoint URL"
+        :label="t('settings.endpoint')"
         :value="state.lmStudioEndpoint"
         @scaleChange="(e: CustomEvent) => state.lmStudioEndpoint = e.detail.value ?? ''"
-        helper-text="Default: http://localhost:1234/v1"
+        :helper-text="t('settings.endpointHelper')"
+      ></scale-text-field>
+    </div>
+
+    <!-- LLMHub Settings -->
+    <div v-if="state.provider === 'llmhub'" class="settings__section">
+      <h3>{{ t('settings.llmHubConfig') }}</h3>
+      <p class="settings__helper settings__helper--safe">
+        {{ t('settings.credentialsSafe') }}
+      </p>
+      <scale-text-field
+        :label="t('settings.apiKey')"
+        type="password"
+        :value="state.llmHubApiKey"
+        @scaleChange="(e: CustomEvent) => state.llmHubApiKey = e.detail.value ?? ''"
+        :helper-text="t('settings.llmHubApiKeyHelper')"
+      ></scale-text-field>
+      <scale-text-field
+        :label="t('settings.endpoint')"
+        :value="state.llmHubEndpoint"
+        @scaleChange="(e: CustomEvent) => state.llmHubEndpoint = e.detail.value ?? ''"
+        :helper-text="t('settings.llmHubEndpointHelper')"
+      ></scale-text-field>
+
+      <!-- Model selection: dropdown if models fetched, text field as fallback -->
+      <div class="settings__model-row">
+        <scale-button
+          variant="secondary"
+          size="small"
+          :disabled="modelFetchStatus === 'loading' || !state.llmHubApiKey"
+          @click="fetchModels"
+        >
+          {{ modelFetchStatus === 'loading' ? t('settings.fetchingModels') : t('settings.fetchModels') }}
+        </scale-button>
+        <span v-if="modelFetchStatus === 'success'" class="settings__model-count">
+          {{ modelFetchMessage }}
+        </span>
+      </div>
+
+      <scale-notification
+        v-if="modelFetchStatus === 'error'"
+        variant="danger"
+        :heading="t('settings.fetchModelsFailed')"
+        opened
+      >
+        {{ modelFetchMessage }}
+      </scale-notification>
+
+      <!-- Grouped model dropdown when models are available -->
+      <scale-dropdown-select
+        v-if="llmHubModels.length > 0"
+        :label="t('settings.model')"
+        :value="state.llmHubModel"
+        @scale-change="handleModelChange"
+      >
+        <!-- Reasoning models group -->
+        <scale-dropdown-select-item v-if="reasoningModels.length > 0" disabled value="">
+          {{ t('settings.reasoningModels') }}
+        </scale-dropdown-select-item>
+        <scale-dropdown-select-item
+          v-for="model in reasoningModels"
+          :key="model.id"
+          :value="model.id"
+          :selected="state.llmHubModel === model.id"
+        >
+          {{ model.id }}
+        </scale-dropdown-select-item>
+        <!-- Chat models group -->
+        <scale-dropdown-select-item v-if="chatModels.length > 0" disabled value="">
+          {{ t('settings.chatModels') }}
+        </scale-dropdown-select-item>
+        <scale-dropdown-select-item
+          v-for="model in chatModels"
+          :key="model.id"
+          :value="model.id"
+          :selected="state.llmHubModel === model.id"
+        >
+          {{ model.id }}
+        </scale-dropdown-select-item>
+      </scale-dropdown-select>
+
+      <!-- Fallback: manual text field when no models fetched -->
+      <scale-text-field
+        v-else
+        :label="t('settings.model')"
+        :value="state.llmHubModel"
+        @scaleChange="(e: CustomEvent) => state.llmHubModel = e.detail.value ?? ''"
+        :helper-text="t('settings.llmHubModelHelper')"
       ></scale-text-field>
     </div>
 
     <!-- Test Connection -->
     <div class="settings__section">
-      <h3>Test Connection</h3>
+      <h3>{{ t('settings.testConnection') }}</h3>
       <p class="settings__helper">
-        Send a quick test message to verify your provider is configured correctly.
+        {{ t('settings.testConnectionHelper') }}
       </p>
       <div class="settings__test">
         <scale-button
@@ -159,14 +235,14 @@ async function testConnection() {
           variant="secondary"
           @click="testConnection"
         >
-          {{ testStatus === 'testing' ? 'Testing...' : 'Test connection' }}
+          {{ testStatus === 'testing' ? t('settings.testing') : t('settings.testBtn') }}
         </scale-button>
       </div>
 
       <scale-notification
         v-if="testStatus === 'success'"
         variant="success"
-        heading="Connection successful"
+        :heading="t('settings.connectionSuccess')"
         opened
       >
         {{ testMessage }}
@@ -175,104 +251,15 @@ async function testConnection() {
       <scale-notification
         v-if="testStatus === 'error'"
         variant="danger"
-        heading="Connection failed"
+        :heading="t('settings.connectionFailed')"
         opened
       >
         {{ testMessage }}
       </scale-notification>
     </div>
 
-    <!-- Product Context -->
-    <div class="settings__section">
-      <h3>Product Context</h3>
-      <p class="settings__helper">
-        Upload Markdown files with product-specific knowledge to improve extraction accuracy and text quality.
-        Activate context in the classification panel during event documentation.
-      </p>
-
-      <scale-dropdown-select
-        label="Source"
-        :value="pcState.mode"
-        @scale-change="handleModeChange"
-      >
-        <scale-dropdown-select-item value="local" :selected="pcState.mode === 'local'">
-          Local (Markdown files)
-        </scale-dropdown-select-item>
-        <scale-dropdown-select-item value="rag" :selected="pcState.mode === 'rag'" disabled>
-          RAG API (coming soon)
-        </scale-dropdown-select-item>
-      </scale-dropdown-select>
-
-      <!-- Local document list -->
-      <div v-if="pcState.mode === 'local'" class="product-context__documents">
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept=".md,.txt,.markdown"
-          multiple
-          style="display: none"
-          @change="handleFileUpload"
-        />
-        <scale-button variant="secondary" size="small" @click="triggerFileUpload">
-          Upload .md files
-        </scale-button>
-
-        <!-- Document list -->
-        <ul v-if="pcState.documents.length > 0" class="product-context__list">
-          <li
-            v-for="doc in pcState.documents"
-            :key="doc.name"
-            class="product-context__item"
-          >
-            <span class="product-context__name">{{ doc.name }}</span>
-            <div class="product-context__actions">
-              <scale-button
-                variant="secondary"
-                size="small"
-                @click="openPreview(doc)"
-              >
-                Preview
-              </scale-button>
-              <scale-button
-                variant="secondary"
-                size="small"
-                @click="handleRemoveDocument(doc.name)"
-              >
-                Delete
-              </scale-button>
-            </div>
-          </li>
-        </ul>
-
-        <!-- Empty state -->
-        <p v-else class="settings__helper">
-          No context documents uploaded yet. Upload .md files with product name, terminology, tone guidelines, or domain rules.
-        </p>
-      </div>
-
-      <!-- RAG placeholder -->
-      <div v-if="pcState.mode === 'rag'">
-        <p class="settings__helper">
-          RAG API integration is planned for a future release. Switch to Local mode to provide product context via files.
-        </p>
-      </div>
-    </div>
-
-    <!-- Document preview modal -->
-    <scale-modal
-      :opened="!!previewDoc"
-      :heading="previewDoc?.name ?? ''"
-      size="large"
-      @scale-close="closePreview"
-    >
-      <!-- eslint-disable-next-line vue/no-v-html -->
-      <div class="md-preview md-content" v-html="previewHtml"></div>
-      <div slot="action">
-        <scale-button variant="secondary" @click="closePreview">
-          Close
-        </scale-button>
-      </div>
-    </scale-modal>
+    <!-- Product Context (extracted sub-component) -->
+    <ProductContextSection />
   </div>
 </template>
 
@@ -309,56 +296,18 @@ async function testConnection() {
   gap: 12px;
 }
 
-.product-context__documents {
+.settings__helper--safe {
+  font-style: italic;
+}
+
+.settings__model-row {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
-.product-context__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.product-context__item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--telekom-color-background-canvas, #f4f4f4);
-  border: 1px solid var(--telekom-color-ui-border-standard, #ccc);
-  border-radius: 6px;
-}
-
-.product-context__name {
+.settings__model-count {
+  color: var(--telekom-color-text-and-icon-functional-success, #2a7a2a);
   font-size: 14px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--telekom-color-text-and-icon-standard, #1b1b1b);
-  min-width: 0;
-  flex: 1;
 }
-
-.product-context__actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.md-preview {
-  max-height: 60vh;
-  overflow-y: auto;
-  padding: 4px 0;
-}
-</style>
-
-<!-- Non-scoped: markdown styles must reach v-html content -->
-<style>
-@import '@/styles/markdown.css';
 </style>

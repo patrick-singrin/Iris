@@ -4,10 +4,14 @@ import ChatMessage from './ChatMessage.vue'
 import ChatInput from './ChatInput.vue'
 import ChatWelcome from './ChatWelcome.vue'
 import ChatFollowUp from './ChatFollowUp.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useChatStore } from '@/stores/chatStore'
 import { createProvider } from '@/services/llm/providerFactory'
 import { buildChatSystemPrompt, buildChatMessages } from '@/services/llm/chatPromptBuilder'
 import { detectContextLocally, parseContextFromResponse, stripContextBlock } from '@/services/llm/contextAnalyzer'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const {
   messages,
@@ -98,10 +102,8 @@ const pendingFollowUps = computed(() => {
     <!-- Header with New Chat -->
     <div v-if="messages.length > 0 || isGenerating" class="chat-panel__header">
       <button class="chat-panel__new-chat" @click="handleClear">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        New Chat
+        <AppIcon name="plus" :stroke-width="2" />
+        {{ t('chat.newChat') }}
       </button>
     </div>
 

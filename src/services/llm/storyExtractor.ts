@@ -82,6 +82,9 @@ GENERAL:
 - For fields with allowed values, use EXACTLY one of the listed values.
 - The "evidence" MUST be the exact phrase from the user's input that supports your extraction.
 - Be aggressive but accurate: extract everything clearly stated or strongly implied.
+- For EACH of the checklist fields, actively scan the user's text for any relevant information. Do not skip fields.
+- If the user describes a consequence (e.g., "can't use the API", "key becomes invalid"), that maps to user_impact.
+- If the user describes who's affected (e.g., "users with auto-rotate enabled"), that maps to who_affected.
 - If the user mentions "all users" or similar broad scope, extract both who_affected AND impact_scope.
 - If the user mentions a date or time, extract timing.
 - If the user mentions something users need to do, extract action_required AND what_to_do.
@@ -94,6 +97,15 @@ USER IMPACT CALIBRATION — choose carefully between "blocked", "degraded", and 
 - "no_impact" = no effect on current user workflows. Informational only.
   Examples: scheduled maintenance next week → no_impact. New feature announcement → no_impact. Internal process change with no user-visible effect → no_impact.
 - When in doubt between "blocked" and "degraded", ask: "Can the user still accomplish their primary goal, even if slowly or with workarounds?" If yes → "degraded". If no → "blocked".
+
+TEMPORAL EVALUATION PRINCIPLE — always evaluate user_impact at the MOMENT the event occurs:
+- Classify impact based on what happens WHEN the event takes effect, not based on advance notice or scheduling intervals.
+- "API key rotates every 30 days" → At rotation moment: key becomes invalid → user is BLOCKED (cannot authenticate).
+- "Maintenance window Sunday 2am" → During maintenance: service unavailable → user is BLOCKED.
+- "Certificate expires in 90 days" → At expiration: connections fail → user is BLOCKED.
+- The advance notice period (30 days, 90 days, etc.) is context for TIMING and ESCALATION, not for reducing impact severity.
+- If a recurring interval or lead time is mentioned, extract it as timing context but still evaluate impact at the moment of occurrence.
+- A scheduled event does NOT mean low impact — it means the timing is known. Impact is about what happens to users when it executes.
 
 FREE TEXT FIELDS — preserve the user's specific, actionable language:
 - Extract the CONCRETE details: service names, dates, versions, specific actions, URLs.

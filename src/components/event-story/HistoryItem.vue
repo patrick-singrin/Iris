@@ -79,7 +79,7 @@ defineProps<{
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  background: #efeff0;
+  background: var(--telekom-color-background-surface-subtle, #efeff0);
   border-radius: 4px;
   color: var(--telekom-color-text-and-icon-standard, #000000);
 }
@@ -101,14 +101,14 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   padding: 3px 8px;
-  background: #ccf0e1;
+  background: var(--telekom-color-functional-success-subtle, #ccf0e1);
   border-radius: 4px;
   font-family: 'TeleNeo', sans-serif;
   font-size: 14px;
   font-weight: 655;
   line-height: 17.5px;
   letter-spacing: -0.14px;
-  color: #00774b;
+  color: var(--telekom-color-text-and-icon-on-subtle-success, #00774b);
 }
 
 /* Info row ------------------------------------------------------------ */

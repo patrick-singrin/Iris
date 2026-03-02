@@ -1,12 +1,14 @@
 # Architectural and Design Decisions
 
-## 1. No Placeholders in Narrative
+## 1. Placeholders in Channel Text, Real Values in Narrative
 
-**Decision**: The LLM-generated narrative shown to the user must use real, concrete details (service names, dates, times) — never generic placeholders like `{service_name}` or `[DATE]`.
+**Decision**: The LLM-generated **narrative** uses real, concrete details (service names, dates, times). The LLM-generated **channel text** (banner, email, dashboard, status page) uses `{placeholder}` tokens instead of concrete values.
 
-**Why**: Placeholders make the narrative feel like a template rather than a finished draft. The whole point of the guided flow is that the user provides specifics, and the LLM turns them into polished prose.
+**Why**: The narrative is the user's working draft — it should read as finished prose with real details. Channel text, however, is output that gets deployed across multiple event instances. Using placeholders like `{start-time}` and `{service-name}` makes the text reusable as a template.
 
-**Implication**: The placeholder system (`src/data/placeholders.ts`, `src/data/placeholders.json`) is preserved for a future template-generation step where users can create reusable templates from completed narratives. The placeholder imports in `storyExtractor.ts` are commented out but intentionally kept.
+**How**: `placeholders.json` defines all available placeholders with `examples` arrays that teach the LLM which concrete values to substitute. The text generator prompt (`storyTextGenerator.ts`) instructs the LLM to actively replace real values with placeholder tokens. The system prompt (`promptBuilder.ts`) reinforces this rule.
+
+**History**: Originally (2026-02-26) this decision was "no placeholders anywhere." Updated 2026-03-02 to enable placeholders in channel text output.
 
 ## 2. W-Heading Narrative Format
 

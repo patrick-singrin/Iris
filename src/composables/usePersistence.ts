@@ -24,7 +24,7 @@ export interface AnsweredQuestion {
 }
 
 const STORAGE_KEY = 'iris-event-story-state'
-const STORAGE_VERSION = 9
+const STORAGE_VERSION = 10
 
 // ---------------------------------------------------------------------------
 // Types

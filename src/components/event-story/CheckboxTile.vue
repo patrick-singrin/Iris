@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import HotkeyBadge from './HotkeyBadge.vue'
 
 const props = defineProps<{
@@ -30,9 +31,7 @@ function handleClick() {
     <div class="checkbox-tile__content">
       <div class="checkbox-tile__checkbox-row">
         <span class="checkbox-tile__box">
-          <svg v-if="selected" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+          <AppIcon v-if="selected" name="check" :size="12" :stroke-width="2" />
         </span>
         <span class="checkbox-tile__label">{{ label }}</span>
       </div>
@@ -97,6 +96,7 @@ function handleClick() {
 .checkbox-tile--selected .checkbox-tile__box {
   background: var(--telekom-color-primary-standard, #e20074);
   border-color: var(--telekom-color-primary-standard, #e20074);
+  color: var(--telekom-color-text-and-icon-white-standard, #fff);
 }
 
 .checkbox-tile__label {
@@ -117,6 +117,6 @@ function handleClick() {
   font-size: 14px;
   font-weight: 400;
   line-height: 19.6px;
-  color: #747478;
+  color: var(--telekom-color-ui-strong, #747478);
 }
 </style>

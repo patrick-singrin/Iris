@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   questions: string[]
@@ -46,12 +50,8 @@ function handleKeydown(index: number, event: KeyboardEvent) {
   <div class="chat-followup">
     <div class="chat-followup__card">
       <div class="chat-followup__header">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
-          <path d="M6 6a2 2 0 1 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-          <circle cx="8" cy="12" r="0.75" fill="currentColor" />
-        </svg>
-        Help me refine the suggestion
+        <AppIcon name="help" :size="14" />
+        {{ t('chat.followUp.header') }}
       </div>
       <div
         v-for="(question, i) in questions"
@@ -63,7 +63,7 @@ function handleKeydown(index: number, event: KeyboardEvent) {
           :value="answers[i]"
           rows="1"
           resize="vertical"
-          placeholder="Type your answer…"
+          :placeholder="t('chat.followUp.placeholder')"
           @scaleChange="handleInput(i, $event)"
           @keydown="handleKeydown(i, $event)"
         />
@@ -74,7 +74,7 @@ function handleKeydown(index: number, event: KeyboardEvent) {
           :disabled="answers.every(a => !a.trim())"
           @click="handleSubmit"
         >
-          Send answers
+          {{ t('chat.followUp.send') }}
         </scale-button>
       </div>
     </div>

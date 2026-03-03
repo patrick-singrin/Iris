@@ -11,18 +11,18 @@ const props = defineProps<{
 }>()
 
 const VALUE_LABELS = computed<Record<string, Record<string, string>>>(() => ({
-  event_kind: {
-    system_change: t('sq.val.eventKind.systemChange'),
-    error_issue: t('sq.val.eventKind.errorIssue'),
-    user_action: t('sq.val.eventKind.userAction'),
-    process_update: t('sq.val.eventKind.processUpdate'),
+  event_trigger: {
+    user_interaction: t('sq.val.eventTrigger.userInteraction'),
+    system_runtime: t('sq.val.eventTrigger.systemRuntime'),
+    scheduled_system: t('sq.val.eventTrigger.scheduledSystem'),
+    scheduled_user: t('sq.val.eventTrigger.scheduledUser'),
   },
   user_impact: { blocked: t('sq.val.userImpact.blocked'), degraded: t('sq.val.userImpact.degraded'), no_impact: t('sq.val.userImpact.noImpact') },
-  impact_scope: { widespread: t('sq.val.impactScope.widespread'), limited: t('sq.val.impactScope.limited') },
-  timing: { now: t('sq.val.timing.now'), scheduled: t('sq.val.timing.scheduled'), resolved: t('sq.val.timing.resolved') },
-  action_required: { mandatory: t('sq.val.actionRequired.mandatory'), recommended: t('sq.val.actionRequired.recommended'), no: t('sq.val.actionRequired.no') },
+  impact_scope: { widespread: t('sq.val.impactScope.widespread'), limited: t('sq.val.impactScope.limited'), individual: t('sq.val.impactScope.individual') },
+  timing: { now: t('sq.val.timing.now'), scheduled: t('sq.val.timing.scheduled') },
+  action_required: { mandatory: t('sq.val.actionRequired.mandatory'), no: t('sq.val.actionRequired.no') },
   security: { yes: t('sq.val.security.yes'), no: t('sq.val.security.no') },
-  error_location: { specific_field: t('sq.val.errorLocation.specificField'), whole_page: t('sq.val.errorLocation.wholePage'), background: t('sq.val.errorLocation.background'), api: t('sq.val.errorLocation.api') },
+  who_affected: { all_users: t('sq.val.whoAffected.allUsers'), specific_group: t('sq.val.whoAffected.specificGroup'), single_user: t('sq.val.whoAffected.singleUser') },
 }))
 
 const status = computed<'empty' | 'unverified' | 'verified'>(() => {
@@ -46,14 +46,12 @@ const displayValue = computed(() => {
       'checklist-item',
       `checklist-item--${status}`,
     ]"
+    :aria-label="item.label + ' — ' + t(`story.status.${status}`)"
   >
     <!-- Empty state: question-mark icon + label + "No Information" -->
     <template v-if="status === 'empty'">
       <div class="checklist-item__top">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="checklist-item__icon">
-          <rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.5" fill="none" />
-          <text x="8" y="12" text-anchor="middle" font-size="10" font-weight="700" font-family="TeleNeo, sans-serif" fill="currentColor">?</text>
-        </svg>
+        <AppIcon name="question-box" class="checklist-item__icon" />
         <span class="checklist-item__question">{{ item.label }}</span>
       </div>
       <div class="checklist-item__info checklist-item__info--empty">{{ t('story.noInformation') }}</div>

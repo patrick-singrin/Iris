@@ -148,9 +148,14 @@ function handleApply() {
           <span
             ref="infoIconRef"
             class="product-context-info"
+            tabindex="0"
+            role="button"
             :aria-label="t('productContext.tooltip')"
+            aria-describedby="pc-tooltip"
             @mouseenter="showTooltip"
             @mouseleave="hideTooltip"
+            @focus="showTooltip"
+            @blur="hideTooltip"
           >
             <AppIcon name="info" :size="12" />
           </span>
@@ -167,6 +172,8 @@ function handleApply() {
   <Teleport to="body">
     <div
       v-if="tooltipVisible"
+      id="pc-tooltip"
+      role="tooltip"
       class="product-context-tooltip"
       :style="tooltipStyle"
     >
@@ -219,7 +226,7 @@ function handleApply() {
   font-family: 'TeleNeo', sans-serif;
   font-size: 14px;
   font-weight: 400;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
   line-height: 19.6px;
   margin: 0 0 8px;
 }
@@ -266,7 +273,7 @@ function handleApply() {
   position: fixed;
   width: 260px;
   padding: 10px 12px;
-  background: #1b1b1b;
+  background: var(--telekom-color-text-and-icon-standard, #1b1b1b);
   color: var(--telekom-color-text-and-icon-white-standard, #fff);
   font-family: 'TeleNeo', sans-serif;
   font-size: 13px;

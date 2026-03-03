@@ -102,17 +102,17 @@ AIFS Serving is an enterprise AI model serving and inference platform used by da
 // ALLOWED VALUES (mirrors story-classification.ts)
 // ═══════════════════════════════════════════════════════════════════
 const FIELD_ALLOWED_VALUES = {
-  event_kind: ['system_change', 'error_issue', 'user_action', 'process_update'],
+  event_trigger: ['user_interaction', 'system_runtime', 'scheduled_system', 'scheduled_user'],
   user_impact: ['blocked', 'degraded', 'no_impact'],
-  impact_scope: ['widespread', 'limited'],
-  timing: ['now', 'scheduled', 'resolved'],
-  action_required: ['mandatory', 'recommended', 'no'],
+  impact_scope: ['widespread', 'limited', 'individual'],
+  timing: ['now', 'scheduled'],
+  action_required: ['mandatory', 'no'],
   security: ['yes', 'no'],
-  error_location: ['specific_field', 'whole_page', 'background', 'api'],
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // COMPONENT TEMPLATES (simplified from content-templates.json)
+// All events → Notification → severity-based channel selection
 // ═══════════════════════════════════════════════════════════════════
 const COMPONENT_TEMPLATES = {
   notification: {
@@ -144,34 +144,6 @@ const COMPONENT_TEMPLATES = {
       ],
     },
   },
-  error_warning: {
-    inline_message: {
-      name: 'Inline Message', appliesTo: ['all'],
-      fields: [
-        { id: 'inline_title', label: 'Title', maxChars: 60, required: false },
-        { id: 'inline_message', label: 'Message', maxChars: 150, required: true },
-        { id: 'inline_cta', label: 'Action link', maxChars: 25, required: false },
-      ],
-    },
-  },
-  feedback: {
-    toast: {
-      name: 'Toast', appliesTo: ['all'],
-      fields: [
-        { id: 'toast_message', label: 'Message', maxChars: 40, required: true },
-        { id: 'toast_cta', label: 'Undo / Action', maxChars: 15, required: false },
-      ],
-    },
-  },
-  validation: {
-    field_message: {
-      name: 'Field Validation', appliesTo: ['all'],
-      fields: [
-        { id: 'validation_helper', label: 'Helper text', maxChars: 80, required: false },
-        { id: 'validation_error', label: 'Error message', maxChars: 80, required: true },
-      ],
-    },
-  },
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -180,7 +152,7 @@ const COMPONENT_TEMPLATES = {
 function createChecklist() {
   return [
     { id: 'what_happened', label: 'What happened', filled: false, value: null, verified: false },
-    { id: 'event_kind', label: 'Event kind', filled: false, value: null, verified: false },
+    { id: 'event_trigger', label: 'Event trigger', filled: false, value: null, verified: false },
     { id: 'who_affected', label: 'Who is affected', filled: false, value: null, verified: false },
     { id: 'impact_scope', label: 'Scope of impact', filled: false, value: null, verified: false },
     { id: 'user_impact', label: 'User impact level', filled: false, value: null, verified: false },
@@ -188,8 +160,6 @@ function createChecklist() {
     { id: 'action_required', label: 'Action required', filled: false, value: null, verified: false },
     { id: 'what_to_do', label: 'What users should do', filled: false, value: null, verified: false },
     { id: 'security', label: 'Security concerns', filled: false, value: null, verified: false },
-    { id: 'error_location', label: 'Error location', filled: false, value: null, verified: false },
-    { id: 'field_context', label: 'Field context', filled: false, value: null, verified: false },
   ]
 }
 
@@ -281,10 +251,9 @@ Return a JSON object with this exact structure:
 Use the component and field IDs exactly as specified in the user prompt.
 
 TONE: Professional, clear, empathetic. Active voice. Specific over vague. Concise.
-- Errors: Helpful, not blaming. Explain what went wrong and how to fix.
-- Notifications (Critical): Direct, urgent, action-focused.
-- Notifications (Medium): Informative, clear ask.
-- Feedback: Minimal confirming. 2-4 words ideal.` +
+- Critical/High severity: Direct, urgent, action-focused.
+- Medium severity: Informative, clear ask.
+- Low severity: Brief, factual, no unnecessary alarm.` +
   (PRODUCT_CONTEXT ? `\n\n## Product Context\nThe following product-specific context should inform your text generation. Use it to match the product's voice, terminology, and domain conventions.\n\n${PRODUCT_CONTEXT}` : '')
 }
 
@@ -383,33 +352,24 @@ function robustParse(raw) {
 
 // ═══════════════════════════════════════════════════════════════════
 // CLASSIFICATION (mirrors story-classification.ts)
+// Single path: ALL events → Notification → severity → channels
 // ═══════════════════════════════════════════════════════════════════
 function deriveClassification(checklist) {
   const get = (id) => checklist.find(i => i.id === id) || { filled: false, value: null }
-  const kind = get('event_kind')
-  if (!kind.filled) return null
+  const trigger = get('event_trigger')
+  if (!trigger.filled) return null
 
-  if (kind.value === 'error_issue') {
-    const loc = get('error_location')
-    if (loc.filled && loc.value === 'specific_field')
-      return { type: 'Validation Message', severity: null, channels: ['Inline Field Validation'] }
-    return { type: 'Error & Warning', severity: null, channels: ['Inline message at point of action'] }
-  }
-  if (kind.value === 'user_action') {
-    const ctx = get('field_context')
-    if (ctx.filled && ctx.value === 'form')
-      return { type: 'Validation Message', severity: null, channels: ['Inline Field Validation'] }
-    return { type: 'Feedback', severity: null, channels: ['Toast Notification'] }
-  }
   const impact = get('user_impact')
   const scope = get('impact_scope')
   const security = get('security')
-  const action = get('action_required')
+  const timing = get('timing')
 
   let severity = 'LOW'
-  if (impact.value === 'blocked' || security.value === 'yes') severity = 'CRITICAL'
+  if (security.value === 'yes' && timing.value === 'now') severity = 'CRITICAL'
+  else if (impact.value === 'blocked' && scope.value === 'widespread' && timing.value === 'now') severity = 'CRITICAL'
+  else if (impact.value === 'blocked' && timing.value === 'now') severity = 'HIGH'
   else if (impact.value === 'degraded' && scope.value === 'widespread') severity = 'HIGH'
-  else if (action.value === 'mandatory') severity = 'HIGH'
+  else if (impact.value === 'blocked') severity = 'MEDIUM'
   else if (scope.value === 'widespread') severity = 'MEDIUM'
 
   const channels = []
@@ -421,23 +381,15 @@ function deriveClassification(checklist) {
 
 function getComponentsForClassification(classification) {
   if (!classification) return []
-  if (classification.type === 'Notification') {
-    const sev = classification.severity || 'LOW'
-    return Object.values(COMPONENT_TEMPLATES.notification)
-      .filter(c => c.appliesTo.includes(sev))
-  }
-  const typeMap = {
-    'Error & Warning': 'error_warning',
-    'Feedback': 'feedback',
-    'Validation Message': 'validation',
-  }
-  const key = typeMap[classification.type]
-  if (!key || !COMPONENT_TEMPLATES[key]) return []
-  return Object.values(COMPONENT_TEMPLATES[key])
+  const sev = classification.severity || 'LOW'
+  return Object.values(COMPONENT_TEMPLATES.notification)
+    .filter(c => c.appliesTo.includes(sev))
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // TEST SCENARIOS
+// New question flow: trigger → what happened → who → impact → action → security
+// All events → Notification classification (single path)
 // ═══════════════════════════════════════════════════════════════════
 const SCENARIOS = [
   // --- GOOD INPUT (baseline) ---
@@ -445,28 +397,33 @@ const SCENARIOS = [
     name: 'Senior Engineer — DB outage',
     inputQuality: { specificity: 5, vocabulary: 5, completeness: 5, clarity: 5 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Error or issue'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: 'The PostgreSQL connection pool on our production API cluster became exhausted. This caused HTTP 503 errors for all authenticated API endpoints including login, dashboard, and account management. The issue has been ongoing for 45 minutes.' },
-      { question: 'Where does the error appear?', selectedOptions: ['In an API call or integration'], freeformText: '' },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: 'The PostgreSQL connection pool on our production API cluster became exhausted. This caused HTTP 503 errors for all authenticated API endpoints including login, dashboard, and account management. The issue has been ongoing for 45 minutes.' },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Yes, completely blocked'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'error_issue', error_location: 'api', security: 'no',
+      event_trigger: 'system_runtime', security: 'no',
       who_affected: true, what_happened: true, user_impact: 'blocked',
-      classificationType: 'Error & Warning',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Product Manager — maintenance',
     inputQuality: { specificity: 4, vocabulary: 4, completeness: 5, clarity: 5 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['System change or maintenance'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "We're upgrading our billing system next Saturday. Customers won't be able to view or download invoices for about 2 hours. Everything else works fine. We need to notify them ahead of time." },
+      { question: 'What triggered this event?', selectedOptions: ['A scheduled system event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "We're upgrading our billing system next Saturday. Customers won't be able to view or download invoices for about 2 hours. Everything else works fine. We need to notify them ahead of time." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Partially — things are slower or limited'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'system_change', security: 'no',
-      who_affected: true, what_happened: true, timing: 'scheduled',
+      event_trigger: 'scheduled_system', security: 'no',
+      who_affected: true, what_happened: true,
       classificationType: 'Notification',
     },
   },
@@ -476,13 +433,16 @@ const SCENARIOS = [
     name: 'Junior Dev — API deprecation',
     inputQuality: { specificity: 4, vocabulary: 3, completeness: 4, clarity: 4 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['System change or maintenance'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "We're deprecating the v1 REST API. Everyone needs to switch to v2 by end of Q1. The v1 endpoints will return 410 Gone after March 31. There's a migration guide on the dev portal." },
+      { question: 'What triggered this event?', selectedOptions: ['A scheduled system event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "We're deprecating the v1 REST API. Everyone needs to switch to v2 by end of Q1. The v1 endpoints will return 410 Gone after March 31. There's a migration guide on the dev portal." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['No, users can continue working'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['Yes'], freeformText: 'Migrate to v2 API before March 31' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'system_change', security: 'no',
-      who_affected: true, what_happened: true, timing: 'scheduled',
+      event_trigger: 'scheduled_system', security: 'no',
+      who_affected: true, what_happened: true,
       action_required: 'mandatory', what_to_do: true,
       classificationType: 'Notification',
     },
@@ -493,42 +453,46 @@ const SCENARIOS = [
     name: 'UX Designer — vague error description',
     inputQuality: { specificity: 2, vocabulary: 1, completeness: 2, clarity: 2 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Error or issue'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "The thing with the red box keeps popping up when people try to do their stuff. I think it's something about the backend? People are complaining and can't really use it. It's been like that since the morning." },
-      { question: 'Where does the error appear?', selectedOptions: ['On the whole page or screen'], freeformText: '' },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "The thing with the red box keeps popping up when people try to do their stuff. I think it's something about the backend? People are complaining and can't really use it. It's been like that since the morning." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Yes, completely blocked'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'error_issue', error_location: 'whole_page', security: 'no',
-      what_happened: true, user_impact: 'blocked', timing: 'now',
-      classificationType: 'Error & Warning',
+      event_trigger: 'system_runtime', security: 'no',
+      what_happened: true, user_impact: 'blocked',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Intern — minimal one-liner',
     inputQuality: { specificity: 1, vocabulary: 1, completeness: 1, clarity: 2 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Error or issue'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: 'something broke' },
-      { question: 'Where does the error appear?', selectedOptions: [], freeformText: "i don't know, everywhere?" },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: 'something broke' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'error_issue', security: 'no',
+      event_trigger: 'system_runtime', security: 'no',
       what_happened: true,
-      classificationType: 'Error & Warning',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Non-native speaker — grammatical errors',
     inputQuality: { specificity: 3, vocabulary: 2, completeness: 3, clarity: 2 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['System change or maintenance'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "We making update for the password policy. Now all user must have password with big letter, small letter, number and special sign. Minimum 12 character. User who have old password need change before next month end. Is very important for security." },
+      { question: 'What triggered this event?', selectedOptions: ['A scheduled system event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "We making update for the password policy. Now all user must have password with big letter, small letter, number and special sign. Minimum 12 character. User who have old password need change before next month end. Is very important for security." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['No, users can continue working'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['Yes'], freeformText: 'Change password to meet new policy' },
       { question: 'Are there security concerns?', selectedOptions: ['Yes'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'system_change', security: 'yes',
+      event_trigger: 'scheduled_system', security: 'yes',
       what_happened: true, who_affected: true,
       action_required: 'mandatory', what_to_do: true,
       classificationType: 'Notification',
@@ -538,15 +502,17 @@ const SCENARIOS = [
     name: 'Overly verbose PM — buries the lead',
     inputQuality: { specificity: 3, vocabulary: 4, completeness: 5, clarity: 2 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['System change or maintenance'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "So we had this long discussion in the steering committee last Thursday and the decision was made, after some back and forth between the VP of Engineering and the CTO, that we should migrate our entire authentication system from the legacy LDAP-based setup to an OAuth 2.0 OIDC-based system. This basically means all users will need to re-authenticate through the new provider and their existing sessions will be invalidated. The migration window is planned for the weekend of March 15-16. Users should save their work before Friday EOD." },
+      { question: 'What triggered this event?', selectedOptions: ['A scheduled system event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "So we had this long discussion in the steering committee last Thursday and the decision was made, after some back and forth between the VP of Engineering and the CTO, that we should migrate our entire authentication system from the legacy LDAP-based setup to an OAuth 2.0 OIDC-based system. This basically means all users will need to re-authenticate through the new provider and their existing sessions will be invalidated. The migration window is planned for the weekend of March 15-16. Users should save their work before Friday EOD." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Partially — things are slower or limited'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['Yes'], freeformText: 'Save work before Friday and re-authenticate after migration' },
       { question: 'Are there security concerns?', selectedOptions: ['Yes'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'system_change', security: 'yes',
+      event_trigger: 'scheduled_system', security: 'yes',
       what_happened: true, who_affected: true,
-      timing: 'scheduled', action_required: 'mandatory',
-      what_to_do: true,
+      action_required: 'mandatory', what_to_do: true,
       classificationType: 'Notification',
     },
   },
@@ -554,71 +520,86 @@ const SCENARIOS = [
     name: 'Support Agent — emotional, user-centric',
     inputQuality: { specificity: 3, vocabulary: 2, completeness: 3, clarity: 3 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Error or issue'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "We've been getting SO many calls today. Customers are really frustrated because the upload feature is completely broken. They try to upload files and it just hangs forever with the spinner. Some are threatening to cancel. Our dev team says they're working on it but no ETA yet." },
-      { question: 'Where does the error appear?', selectedOptions: ['On the whole page or screen'], freeformText: '' },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "We've been getting SO many calls today. Customers are really frustrated because the upload feature is completely broken. They try to upload files and it just hangs forever with the spinner. Some are threatening to cancel. Our dev team says they're working on it but no ETA yet." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Yes, completely blocked'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'error_issue', error_location: 'whole_page', security: 'no',
+      event_trigger: 'system_runtime', security: 'no',
       what_happened: true, who_affected: true,
-      user_impact: 'blocked', timing: 'now',
-      classificationType: 'Error & Warning',
+      user_impact: 'blocked',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Marketing — feature launch, promotional tone',
     inputQuality: { specificity: 4, vocabulary: 3, completeness: 4, clarity: 4 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Process or status update'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "We just launched our amazing new dark mode feature! Users can now switch between light and dark themes in their profile settings. Works across all pages. No action needed but we'd love everyone to try it!" },
+      { question: 'What triggered this event?', selectedOptions: ['A scheduled system event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "We just launched our amazing new dark mode feature! Users can now switch between light and dark themes in their profile settings. Works across all pages. No action needed but we'd love everyone to try it!" },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['No, users can continue working'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
+      { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'process_update',
+      event_trigger: 'scheduled_system',
       who_affected: true, what_happened: true,
       action_required: 'no', user_impact: 'no_impact',
       classificationType: 'Notification',
     },
   },
   {
-    name: 'UX Designer — wrong mental model (calls error a "notification")',
+    name: 'UX Designer — wrong mental model (describes error as runtime)',
     inputQuality: { specificity: 2, vocabulary: 1, completeness: 3, clarity: 2 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Process or status update'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "Users are seeing some kind of notification in the app — it says something like 'session expired'. They get kicked out and have to log in again. I think it's a notification we should update because the text isn't helpful right now." },
+      { question: 'What triggered this event?', selectedOptions: ['A user interaction'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "Users are seeing some kind of notification in the app — it says something like 'session expired'. They get kicked out and have to log in again. I think it's a notification we should update because the text isn't helpful right now." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Partially — things are slower or limited'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
+      { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
       what_happened: true,
-      event_kind: 'process_update', // user chose this, though it's really an error
-      classificationType: 'Notification', // follows from process_update
+      event_trigger: 'user_interaction',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Security Officer — incident',
     inputQuality: { specificity: 5, vocabulary: 5, completeness: 5, clarity: 5 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['Error or issue'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "Unauthorized access to our staging database through a compromised service account. Credentials rotated, IP blocked. Production was not affected. All admin users must reset their passwords immediately as a precaution." },
-      { question: 'Where does the error appear?', selectedOptions: [], freeformText: 'Admin panel and account settings' },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "Unauthorized access to our staging database through a compromised service account. Credentials rotated, IP blocked. Production was not affected. All admin users must reset their passwords immediately as a precaution." },
+      { question: 'Who is affected?', selectedOptions: ['A group of users'], freeformText: 'Admin users' },
+      { question: 'Are users blocked?', selectedOptions: ['No, users can continue working'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['Yes'], freeformText: 'Reset passwords immediately' },
       { question: 'Are there security concerns?', selectedOptions: ['Yes'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'error_issue', security: 'yes',
+      event_trigger: 'system_runtime', security: 'yes',
       who_affected: true, what_happened: true,
       action_required: 'mandatory', what_to_do: true,
-      classificationType: 'Error & Warning',
+      classificationType: 'Notification',
     },
   },
   {
     name: 'Confused stakeholder — contradictory info',
     inputQuality: { specificity: 2, vocabulary: 2, completeness: 3, clarity: 1 },
     conversation: [
-      { question: 'What type of event is this?', selectedOptions: ['System change or maintenance'], freeformText: '' },
-      { question: 'Describe the event', selectedOptions: [], freeformText: "OK so the payment system is down, but also we planned this, well partially. Basically we started the migration early because there was a bug and now both the old and new systems are kind of unavailable? Users can still log in but can't make payments. Should be fixed by tonight or maybe tomorrow." },
+      { question: 'What triggered this event?', selectedOptions: ['A system runtime event'], freeformText: '' },
+      { question: 'Tell us what happened', selectedOptions: [], freeformText: "OK so the payment system is down, but also we planned this, well partially. Basically we started the migration early because there was a bug and now both the old and new systems are kind of unavailable? Users can still log in but can't make payments. Should be fixed by tonight or maybe tomorrow." },
+      { question: 'Who is affected?', selectedOptions: ['All users'], freeformText: '' },
+      { question: 'Are users blocked?', selectedOptions: ['Partially — things are slower or limited'], freeformText: '' },
+      { question: 'Do users need to take action?', selectedOptions: ['No'], freeformText: '' },
       { question: 'Are there security concerns?', selectedOptions: ['No'], freeformText: '' },
     ],
     expected: {
-      event_kind: 'system_change', security: 'no',
+      event_trigger: 'system_runtime', security: 'no',
       what_happened: true, who_affected: true,
       user_impact: 'degraded',
       classificationType: 'Notification',
@@ -644,33 +625,68 @@ function buildUserMessage(conversation) {
 // PRE-FILL from UI selections (matches app behavior)
 // ═══════════════════════════════════════════════════════════════════
 function prefillChecklist(checklist, conversation) {
-  const kindMap = {
-    'System change or maintenance': 'system_change',
-    'Error or issue': 'error_issue',
-    'User-triggered action': 'user_action',
-    'Process or status update': 'process_update',
+  const triggerMap = {
+    'A user interaction': 'user_interaction',
+    'A system runtime event': 'system_runtime',
+    'A scheduled system event': 'scheduled_system',
+    'A scheduled user event': 'scheduled_user',
   }
-  const locMap = {
-    'In a specific form field': 'specific_field',
-    'On the whole page or screen': 'whole_page',
-    'In a background process': 'background',
-    'In an API call or integration': 'api',
+  const impactMap = {
+    'Yes, completely blocked': 'blocked',
+    'Partially — things are slower or limited': 'degraded',
+    'No, users can continue working': 'no_impact',
+  }
+  const whoMap = {
+    'All users': 'all_users',
+    'A group of users': 'specific_group',
+    'A single user': 'single_user',
   }
 
   for (const entry of conversation) {
     for (const opt of entry.selectedOptions) {
-      if (kindMap[opt]) {
-        const item = checklist.find(i => i.id === 'event_kind')
-        item.filled = true; item.value = kindMap[opt]; item.verified = true
+      // Trigger → event_trigger + timing
+      if (triggerMap[opt]) {
+        const triggerItem = checklist.find(i => i.id === 'event_trigger')
+        triggerItem.filled = true; triggerItem.value = triggerMap[opt]; triggerItem.verified = true
+        // Auto-derive timing from trigger
+        const timingItem = checklist.find(i => i.id === 'timing')
+        const isScheduled = triggerMap[opt].startsWith('scheduled_')
+        timingItem.filled = true; timingItem.value = isScheduled ? 'scheduled' : 'now'; timingItem.verified = true
       }
-      if (locMap[opt]) {
-        const item = checklist.find(i => i.id === 'error_location')
-        item.filled = true; item.value = locMap[opt]; item.verified = true
+      // User impact
+      if (impactMap[opt]) {
+        const item = checklist.find(i => i.id === 'user_impact')
+        item.filled = true; item.value = impactMap[opt]; item.verified = true
+      }
+      // Who affected → who_affected + impact_scope
+      if (whoMap[opt]) {
+        const item = checklist.find(i => i.id === 'who_affected')
+        item.filled = true; item.value = whoMap[opt]; item.verified = true
+        // Auto-derive scope
+        const scopeItem = checklist.find(i => i.id === 'impact_scope')
+        const scopeMap = { 'all_users': 'widespread', 'specific_group': 'limited', 'single_user': 'individual' }
+        scopeItem.filled = true; scopeItem.value = scopeMap[whoMap[opt]]; scopeItem.verified = true
       }
     }
+    // Security
     if (entry.question.includes('security') && entry.selectedOptions.length > 0) {
       const item = checklist.find(i => i.id === 'security')
       item.filled = true; item.value = entry.selectedOptions[0] === 'Yes' ? 'yes' : 'no'; item.verified = true
+    }
+    // Action required
+    if (entry.question.includes('take action') && entry.selectedOptions.length > 0) {
+      const item = checklist.find(i => i.id === 'action_required')
+      item.filled = true; item.value = entry.selectedOptions[0] === 'Yes' ? 'mandatory' : 'no'; item.verified = true
+      // If yes and freeform provided, fill what_to_do
+      if (entry.selectedOptions[0] === 'Yes' && entry.freeformText) {
+        const whatToDo = checklist.find(i => i.id === 'what_to_do')
+        whatToDo.filled = true; whatToDo.value = entry.freeformText; whatToDo.verified = true
+      }
+    }
+    // Who affected follow-up freeform
+    if (entry.question.includes('Who is affected') && entry.freeformText && entry.selectedOptions.includes('A group of users')) {
+      // Freeform text describes which group — this goes into who_affected description
+      // The value is already set from the option; freeform is supplementary context
     }
   }
   return checklist

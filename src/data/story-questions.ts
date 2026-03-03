@@ -1,7 +1,16 @@
 /**
- * Story Questions — defines the adaptive question flow and internal checklist
+ * Story Questions — defines the linear question flow and internal checklist
  * for the Event Story Builder.
  *
+ * The flow captures 6 core aspects of an event:
+ *   1. What triggered it (event_trigger → auto-derives timing)
+ *   2. What happened (what_happened)
+ *   3. Who is affected (who_affected → auto-derives impact_scope)
+ *   4. Are users blocked (user_impact)
+ *   5. Do users need to act (action_required → what_to_do)
+ *   6. Security concerns (security)
+ *
+ * All events go through a single classification path: Notification → Severity.
  * Classification, composition, and channel quality are in story-classification.ts.
  */
 
@@ -27,7 +36,7 @@ export interface StoryChecklistItem {
 export function createDefaultChecklist(): StoryChecklistItem[] {
   return [
     { id: 'what_happened', label: t('sq.cl.whatHappened'), confirmLabel: t('sq.cl.whatHappened.confirm'), category: 'what', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
-    { id: 'event_kind', label: t('sq.cl.eventKind'), confirmLabel: t('sq.cl.eventKind.confirm'), category: 'what', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
+    { id: 'event_trigger', label: t('sq.cl.eventTrigger'), confirmLabel: t('sq.cl.eventTrigger.confirm'), category: 'what', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
     { id: 'who_affected', label: t('sq.cl.whoAffected'), confirmLabel: t('sq.cl.whoAffected.confirm'), category: 'who', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
     { id: 'impact_scope', label: t('sq.cl.impactScope'), confirmLabel: t('sq.cl.impactScope.confirm'), category: 'impact', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
     { id: 'user_impact', label: t('sq.cl.userImpact'), confirmLabel: t('sq.cl.userImpact.confirm'), category: 'impact', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
@@ -35,8 +44,6 @@ export function createDefaultChecklist(): StoryChecklistItem[] {
     { id: 'action_required', label: t('sq.cl.actionRequired'), confirmLabel: t('sq.cl.actionRequired.confirm'), category: 'action', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
     { id: 'what_to_do', label: t('sq.cl.whatToDo'), confirmLabel: t('sq.cl.whatToDo.confirm'), category: 'action', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
     { id: 'security', label: t('sq.cl.security'), confirmLabel: t('sq.cl.security.confirm'), category: 'context', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
-    { id: 'error_location', label: t('sq.cl.errorLocation'), confirmLabel: t('sq.cl.errorLocation.confirm'), category: 'context', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
-    { id: 'field_context', label: t('sq.cl.fieldContext'), confirmLabel: t('sq.cl.fieldContext.confirm'), category: 'context', filled: false, value: null, description: null, evidence: null, source: null, verified: false },
   ]
 }
 
@@ -48,25 +55,12 @@ export function getItem(cl: StoryChecklistItem[], id: string): StoryChecklistIte
   return cl.find(item => item.id === id)!
 }
 
-const KNOWN_EVENT_KINDS = ['system_change', 'error_issue', 'user_action', 'process_update']
-
 /** Look up the human-readable option label for a value. Falls back to the fallback string. */
 function evidenceFor(questionId: string, val: string, fallback: string): string {
   const q = getStoryQuestions().find(q => q.id === questionId)
   const opt = q?.options.find(o => o.value === val)
   return opt ? opt.label : fallback
 }
-
-/** Check if event_kind is one of the given known values, OR is freeform text (not a known enum). */
-function _kindMatches(cl: StoryChecklistItem[], ...kinds: string[]): boolean {
-  const kind = getItem(cl, 'event_kind')
-  if (!kind.filled) return false
-  const val = kind.value as string
-  if (KNOWN_EVENT_KINDS.includes(val)) return kinds.includes(val)
-  // Freeform text — follow the general (system_change) path
-  return kinds.includes('system_change')
-}
-void _kindMatches // Reserved for future use
 
 // ---------------------------------------------------------------------------
 // Patch type — returned by mapAnswer for decoupled state mutation
@@ -159,38 +153,54 @@ export interface StoryQuestionDef {
 /**
  * Returns the story question definitions with translated strings.
  * Called on each access so t() resolves to the current locale.
+ *
+ * Linear flow — no branching. All 6 questions are asked in order,
+ * with what_to_do as an optional follow-up within the action question.
  */
 export function getStoryQuestions(): StoryQuestionDef[] {
   return [
-    // Q1: What kind of change are you communicating? (always first, single choice)
+    // Q1: What triggered this event? (single choice + freeform)
+    // Fills: event_trigger, timing (auto-derived), what_happened (if freeform provided)
     {
-      id: 'event_kind',
-      text: t('sq.eventKind.text'),
-      helpText: t('sq.eventKind.help'),
+      id: 'event_trigger',
+      text: t('sq.eventTrigger.text'),
+      helpText: t('sq.eventTrigger.help'),
       type: 'single',
       options: [
-        { value: 'system_change', label: t('sq.eventKind.systemChange'), description: t('sq.eventKind.systemChange.desc') },
-        { value: 'error_issue', label: t('sq.eventKind.errorIssue'), description: t('sq.eventKind.errorIssue.desc') },
-        { value: 'user_action', label: t('sq.eventKind.userAction'), description: t('sq.eventKind.userAction.desc') },
-        { value: 'process_update', label: t('sq.eventKind.processUpdate'), description: t('sq.eventKind.processUpdate.desc') },
+        { value: 'user_interaction', label: t('sq.eventTrigger.userInteraction'), description: t('sq.eventTrigger.userInteraction.desc') },
+        { value: 'system_runtime', label: t('sq.eventTrigger.systemRuntime'), description: t('sq.eventTrigger.systemRuntime.desc') },
+        { value: 'scheduled_system', label: t('sq.eventTrigger.scheduledSystem'), description: t('sq.eventTrigger.scheduledSystem.desc') },
+        { value: 'scheduled_user', label: t('sq.eventTrigger.scheduledUser'), description: t('sq.eventTrigger.scheduledUser.desc') },
       ],
       allowFreeform: true,
-      freeformPlaceholder: t('sq.eventKind.freeform'),
-      checklistTargets: ['event_kind'],
-      condition: (cl) => !getItem(cl, 'event_kind').filled,
+      freeformPlaceholder: t('sq.eventTrigger.freeform'),
+      checklistTargets: ['event_trigger', 'timing'],
+      condition: (cl) => !getItem(cl, 'event_trigger').filled,
       mapAnswer: (opts, text) => {
         const patches: ChecklistPatch[] = []
         if (opts[0]) {
-          patches.push(patch('event_kind', opts[0], evidenceFor('event_kind', opts[0], opts[0])))
+          patches.push(patch('event_trigger', opts[0], evidenceFor('event_trigger', opts[0], opts[0])))
         } else if (text) {
-          patches.push(patch('event_kind', text, text, 'llm'))
+          patches.push(patch('event_trigger', text, text, 'llm'))
+        } else {
+          return patches
         }
+
+        // Auto-derive timing from trigger type
+        const isScheduled = opts[0] === 'scheduled_system' || opts[0] === 'scheduled_user'
+        const timingVal = isScheduled ? 'scheduled' : 'now'
+        const timingLabel = isScheduled ? t('sq.val.timing.scheduled') : t('sq.val.timing.now')
+        patches.push(patch('timing', timingVal, timingLabel, 'user'))
+
+        // Freeform text also fills what_happened
         if (text) patches.push(patch('what_happened', text, text))
+
         return patches
       },
     },
 
-    // Q2: Describe what happened (freeform, after event kind is set)
+    // Q2: Tell us what happened (freeform)
+    // Fills: what_happened
     {
       id: 'what_happened',
       text: t('sq.whatHappened.text'),
@@ -200,118 +210,65 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       allowFreeform: true,
       freeformPlaceholder: t('sq.whatHappened.freeform'),
       checklistTargets: ['what_happened'],
-      condition: (cl) => getItem(cl, 'event_kind').filled && !getItem(cl, 'what_happened').filled,
+      condition: (cl) => getItem(cl, 'event_trigger').filled && !getItem(cl, 'what_happened').filled,
       mapAnswer: (_opts, text) => {
         if (text) return [patch('what_happened', text, text)]
         return []
       },
     },
 
-    // Q3: Who is affected? (always asked after what_happened)
+    // Q3: Who is affected? (single choice + optional freeform for group name)
+    // Fills: who_affected, impact_scope (auto-derived)
     {
       id: 'who_affected',
       text: t('sq.whoAffected.text'),
       helpText: t('sq.whoAffected.help'),
-      type: 'multiple',
+      type: 'single',
       options: [
         { value: 'all_users', label: t('sq.whoAffected.allUsers') },
         { value: 'specific_group', label: t('sq.whoAffected.specificGroup'), description: t('sq.whoAffected.specificGroup.desc') },
-        { value: 'admins', label: t('sq.whoAffected.admins') },
-        { value: 'external_partners', label: t('sq.whoAffected.externalPartners') },
+        { value: 'single_user', label: t('sq.whoAffected.singleUser') },
       ],
       allowFreeform: true,
       freeformPlaceholder: t('sq.whoAffected.freeform'),
-      checklistTargets: ['who_affected'],
-      condition: (cl) => {
-        return getItem(cl, 'what_happened').filled
-          && !getItem(cl, 'who_affected').filled
-      },
+      checklistTargets: ['who_affected', 'impact_scope'],
+      condition: (cl) => getItem(cl, 'what_happened').filled && !getItem(cl, 'who_affected').filled,
       mapAnswer: (opts, text) => {
-        const combined = text ? [...opts, text] : opts
-        if (combined.length === 0) return []
+        const val = opts[0] || text
+        if (!val) return []
 
         const patches: ChecklistPatch[] = []
-        const labels = combined.map(v => evidenceFor('who_affected', v, v))
-        patches.push(patch('who_affected', combined, labels.join(', ')))
+
+        if (opts[0]) {
+          const label = evidenceFor('who_affected', opts[0], opts[0])
+          // If specific_group and freeform provided, include group name in evidence
+          const displayEvidence = opts[0] === 'specific_group' && text ? `${label}: ${text}` : label
+          patches.push(patch('who_affected', opts[0], displayEvidence, 'user', text && opts[0] === 'specific_group' ? text : undefined))
+        } else {
+          patches.push(patch('who_affected', text, text))
+        }
 
         // Auto-derive impact_scope from audience selection
-        // all_users → widespread, single_user/individual → individual, everything else → limited
+        const primary = opts[0] || 'limited'
         let scope: string
-        if (combined.includes('all_users')) {
-          scope = 'widespread'
-        } else if (combined.includes('single_user')) {
-          scope = 'individual'
-        } else {
-          scope = 'limited'
+        if (primary === 'all_users') scope = 'widespread'
+        else if (primary === 'single_user') scope = 'individual'
+        else scope = 'limited'
+
+        const scopeLabelMap: Record<string, string> = {
+          widespread: t('sq.impactScope.widespread'),
+          limited: t('sq.impactScope.limited'),
+          individual: t('sq.impactScope.individual'),
         }
-        patches.push(patch('impact_scope', scope, evidenceFor('who_affected', combined[0]!, combined[0]!), 'user',
-          t(`sq.impactScope.${scope === 'widespread' ? 'widespread' : scope === 'individual' ? 'individual' : 'limited'}`)))
+        const scopeLabel = scopeLabelMap[scope] || scope
+        patches.push(patch('impact_scope', scope, scopeLabel, 'user', scopeLabel))
 
         return patches
       },
     },
 
-    // Q5: Where does the error occur?
-    {
-      id: 'error_location',
-      text: t('sq.errorLocation.text'),
-      helpText: t('sq.errorLocation.help'),
-      type: 'single',
-      options: [
-        { value: 'specific_field', label: t('sq.errorLocation.specificField') },
-        { value: 'whole_page', label: t('sq.errorLocation.wholePage') },
-        { value: 'background', label: t('sq.errorLocation.background') },
-        { value: 'api', label: t('sq.errorLocation.api') },
-      ],
-      allowFreeform: true,
-      freeformPlaceholder: t('sq.errorLocation.freeform'),
-      checklistTargets: ['error_location'],
-      condition: (cl) => {
-        return getItem(cl, 'who_affected').filled
-          && !getItem(cl, 'error_location').filled
-      },
-      mapAnswer: (opts, text) => {
-        const val = opts[0] || text
-        if (val) {
-          const patches = [patch('error_location', val, evidenceFor('error_location', val, text || val))]
-          if (opts.includes('specific_field')) {
-            patches.push(patch('field_context', 'specific_field', t('sq.evidence.fieldLevelError')))
-          }
-          return patches
-        }
-        return []
-      },
-    },
-
-    // Q6: What triggered this?
-    {
-      id: 'user_action_detail',
-      text: t('sq.userActionDetail.text'),
-      helpText: t('sq.userActionDetail.help'),
-      type: 'single',
-      options: [
-        { value: 'form_submit', label: t('sq.userActionDetail.formSubmit') },
-        { value: 'button_click', label: t('sq.userActionDetail.buttonClick') },
-        { value: 'file_upload', label: t('sq.userActionDetail.fileUpload') },
-        { value: 'config_change', label: t('sq.userActionDetail.configChange') },
-      ],
-      allowFreeform: true,
-      freeformPlaceholder: t('sq.userActionDetail.freeform'),
-      checklistTargets: ['field_context'],
-      condition: (cl) => {
-        return getItem(cl, 'error_location').filled
-          && !getItem(cl, 'field_context').filled
-      },
-      mapAnswer: (opts, text) => {
-        const val = opts[0] || text || 'user_action'
-        if (opts.includes('form_submit')) {
-          return [patch('field_context', 'form', t('sq.evidence.formSubmission'))]
-        }
-        return [patch('field_context', val, evidenceFor('user_action_detail', val, text || val))]
-      },
-    },
-
-    // Q7: How are users impacted?
+    // Q4: Are users blocked? (single choice, 3 levels)
+    // Fills: user_impact
     {
       id: 'user_impact',
       text: t('sq.userImpact.text'),
@@ -325,47 +282,15 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       allowFreeform: true,
       freeformPlaceholder: t('sq.userImpact.freeform'),
       checklistTargets: ['user_impact'],
-      condition: (cl) => {
-        if (getItem(cl, 'user_impact').filled) return false
-        const eventKind = getItem(cl, 'event_kind')
-        // For errors: wait for field_context to be filled first
-        if (eventKind.filled && eventKind.value === 'error_issue') {
-          return getItem(cl, 'field_context').filled
-        }
-        // For all other event types: show after who_affected is filled
-        return getItem(cl, 'who_affected').filled
-      },
+      condition: (cl) => getItem(cl, 'who_affected').filled && !getItem(cl, 'user_impact').filled,
       mapAnswer: (opts, text) => {
         const val = opts[0] || text || 'no_impact'
         return [patch('user_impact', val, evidenceFor('user_impact', val, text || val))]
       },
     },
 
-    // Q8: When is this happening?
-    {
-      id: 'timing',
-      text: t('sq.timing.text'),
-      helpText: t('sq.timing.help'),
-      type: 'single',
-      options: [
-        { value: 'now', label: t('sq.timing.now') },
-        { value: 'scheduled', label: t('sq.timing.scheduled') },
-        { value: 'resolved', label: t('sq.timing.resolved') },
-      ],
-      allowFreeform: true,
-      freeformPlaceholder: t('sq.timing.freeform'),
-      checklistTargets: ['timing'],
-      condition: (cl) => {
-        return getItem(cl, 'user_impact').filled
-          && !getItem(cl, 'timing').filled
-      },
-      mapAnswer: (opts, text) => {
-        const val = opts[0] || text || 'now'
-        return [patch('timing', val, evidenceFor('timing', val, text || val))]
-      },
-    },
-
-    // Q9: Is user action required?
+    // Q5: Do users need to take action? (yes/no + conditional what_to_do)
+    // Fills: action_required, what_to_do (if freeform provided or 'no' selected)
     {
       id: 'action_required',
       text: t('sq.actionRequired.text'),
@@ -373,30 +298,30 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       type: 'single',
       options: [
         { value: 'mandatory', label: t('sq.actionRequired.mandatory'), description: t('sq.actionRequired.mandatory.desc') },
-        { value: 'recommended', label: t('sq.actionRequired.recommended'), description: t('sq.actionRequired.recommended.desc') },
         { value: 'no', label: t('sq.actionRequired.no'), description: t('sq.actionRequired.no.desc') },
       ],
       allowFreeform: true,
       freeformPlaceholder: t('sq.actionRequired.freeform'),
-      checklistTargets: ['action_required'],
-      condition: (cl) => {
-        return getItem(cl, 'timing').filled
-          && !getItem(cl, 'action_required').filled
-      },
+      checklistTargets: ['action_required', 'what_to_do'],
+      condition: (cl) => getItem(cl, 'user_impact').filled && !getItem(cl, 'action_required').filled,
       mapAnswer: (opts, text) => {
-        const val = opts[0] || text || 'no'
+        const val = opts[0] || (text ? 'mandatory' : 'no')
         const patches = [patch('action_required', val, evidenceFor('action_required', val, text || val))]
 
-        // When no action is required, auto-fill what_to_do to avoid blocking interview completion
         if (val === 'no') {
+          // No action needed — auto-fill what_to_do
           patches.push(patch('what_to_do', 'no_action', t('story.noActionRequired'), 'user', t('story.noActionRequired')))
+        } else if (text) {
+          // User provided action description alongside "Yes"
+          patches.push(patch('what_to_do', text, text))
         }
 
         return patches
       },
     },
 
-    // Q10: What should users do?
+    // Q6: What should users do? (freeform follow-up, only if action=mandatory but no description yet)
+    // Fills: what_to_do
     {
       id: 'what_to_do',
       text: t('sq.whatToDo.text'),
@@ -406,17 +331,15 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       allowFreeform: true,
       freeformPlaceholder: t('sq.whatToDo.freeform'),
       checklistTargets: ['what_to_do'],
-      condition: (cl) => {
-        return getItem(cl, 'action_required').filled
-          && !getItem(cl, 'what_to_do').filled
-      },
+      condition: (cl) => getItem(cl, 'action_required').filled && !getItem(cl, 'what_to_do').filled,
       mapAnswer: (_opts, text) => {
         if (text) return [patch('what_to_do', text, text)]
         return []
       },
     },
 
-    // Q11: Security implications?
+    // Q7: Security concerns? (yes/no)
+    // Fills: security
     {
       id: 'security',
       text: t('sq.security.text'),
@@ -429,10 +352,7 @@ export function getStoryQuestions(): StoryQuestionDef[] {
       allowFreeform: true,
       freeformPlaceholder: t('sq.security.freeform'),
       checklistTargets: ['security'],
-      condition: (cl) => {
-        return getItem(cl, 'what_to_do').filled
-          && !getItem(cl, 'security').filled
-      },
+      condition: (cl) => getItem(cl, 'what_to_do').filled && !getItem(cl, 'security').filled,
       mapAnswer: (opts, text) => {
         const val = opts[0] || text || 'no'
         return [patch('security', val, evidenceFor('security', val, text || val))]

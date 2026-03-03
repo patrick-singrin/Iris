@@ -83,6 +83,7 @@ function handleRemoveDocument(name: string) {
         type="file"
         accept=".md,.txt,.markdown,text/markdown,text/plain"
         multiple
+        :aria-label="t('a11y.uploadFiles')"
         style="display: none"
         @change="handleFileUpload"
       />

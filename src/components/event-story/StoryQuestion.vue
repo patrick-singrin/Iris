@@ -4,6 +4,7 @@ import type { RenderableQuestion } from '@/data/story-questions'
 import RadioTile from './RadioTile.vue'
 import CheckboxTile from './CheckboxTile.vue'
 import ConfirmationTile from './ConfirmationTile.vue'
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -181,19 +182,13 @@ function onAfterLeave(el: Element) {
         <h2 class="input-panel__question">{{ question.text }}</h2>
         <p v-if="question.helpText" class="input-panel__help">{{ question.helpText }}</p>
       </div>
-      <button class="input-panel__collapse-btn" :aria-label="collapsed ? 'Expand' : 'Collapse'" @click="toggleCollapse">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path
-            v-if="collapsed"
-            d="M4 10l4-4 4 4"
-            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-          />
-          <path
-            v-else
-            d="M4 6l4 4 4-4"
-            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-          />
-        </svg>
+      <button
+        class="input-panel__collapse-btn"
+        :aria-label="collapsed ? t('a11y.expand') : t('a11y.collapse')"
+        :aria-expanded="!collapsed"
+        @click="toggleCollapse"
+      >
+        <AppIcon :name="collapsed ? 'chevron-up' : 'chevron-down'" :stroke-width="1.5" />
       </button>
     </div>
 
@@ -213,7 +208,7 @@ function onAfterLeave(el: Element) {
             <scale-textarea
               :value="freeformText"
               :label="t('story.orTypeYourOwn')"
-              :placeholder="question.freeformPlaceholder || 'Type your answer...'"
+              :placeholder="question.freeformPlaceholder || t('story.typeYourAnswer')"
               rows="3"
               resize="vertical"
               @scaleChange="handleFreeformInput"
@@ -267,7 +262,8 @@ function onAfterLeave(el: Element) {
             <scale-textarea
               :value="freeformText"
               :label="question.options.length > 0 ? t('story.orTypeYourOwn') : undefined"
-              :placeholder="question.freeformPlaceholder || 'Type your answer...'"
+              :aria-label="question.options.length === 0 ? question.text : undefined"
+              :placeholder="question.freeformPlaceholder || t('story.typeYourAnswer')"
               rows="3"
               resize="vertical"
               @scaleChange="handleFreeformInput"

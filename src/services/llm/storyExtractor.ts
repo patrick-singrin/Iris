@@ -88,6 +88,7 @@ GENERAL:
 - If the user mentions "all users" or similar broad scope, extract both who_affected AND impact_scope.
 - If the user mentions a date or time, extract timing.
 - If the user mentions something users need to do, extract action_required AND what_to_do.
+- If the user describes what caused the event (e.g., "scheduled maintenance", "a user reported", "system error"), that maps to event_trigger.
 
 USER IMPACT CALIBRATION — choose carefully between "blocked", "degraded", and "no_impact":
 - "blocked" = the core workflow is completely unavailable. Users CANNOT perform the primary action at all.

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import TextOutputView from './TextOutputView.vue'
-import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useI18n } from '@/i18n'
 
@@ -10,12 +9,6 @@ const store = useEventStoryStore()
 
 <template>
   <div class="text-gen-panel">
-    <!-- Back link -->
-    <button class="text-gen-panel__back" @click="store.backToCollect()">
-      <AppIcon name="chevron-left" :stroke-width="2" />
-      {{ t('story.backToDetails') }}
-    </button>
-
     <!-- Loading state -->
     <div v-if="store.isGeneratingText.value" class="text-gen-panel__loading">
       <div class="text-gen-panel__spinner" />
@@ -44,29 +37,7 @@ const store = useEventStoryStore()
 .text-gen-panel {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.text-gen-panel__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  color: rgba(0, 0, 0, 0.65);
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: color 0.15s;
-  flex-shrink: 0;
-}
-
-.text-gen-panel__back:hover {
-  color: var(--telekom-color-primary-standard, #e20074);
+  padding: 16px 0;
 }
 
 .text-gen-panel__loading {

@@ -12,7 +12,7 @@ export interface ImpactFactors {
   timing: 'now' | 'scheduled' | ''
   leadTime: 'less_than_24h' | '1_to_7_days' | 'more_than_7_days' | ''
   securityCompliance: boolean | null
-  actionRequired: 'mandatory' | 'recommended' | 'no' | ''
+  actionRequired: 'mandatory' | 'no' | ''
   // Note: workaroundAvailable is NOT a severity driver — it lives in EventDescription
   // and is used only for text generation context.
 }
@@ -176,8 +176,6 @@ function buildExplanation(factors: ImpactFactors, severity: string, timingKey: s
   // Action
   if (factors.actionRequired === 'mandatory') {
     parts.push('mandatory user action required')
-  } else if (factors.actionRequired === 'recommended') {
-    parts.push('recommended user action')
   }
 
   return `${severity} because ${parts.join(', ')}.`
@@ -196,7 +194,7 @@ function buildTrigger(factors: ImpactFactors, timingKey: string): string {
     parts.push('Degraded — widespread')
   } else if (factors.userImpact === 'degraded' && factors.userScope === 'limited') {
     parts.push('Degraded — limited')
-  } else if (factors.actionRequired === 'mandatory' || factors.actionRequired === 'recommended') {
+  } else if (factors.actionRequired === 'mandatory') {
     parts.push('Non-blocking, action needed')
   } else {
     parts.push('Informational only')

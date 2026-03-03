@@ -29,7 +29,7 @@ function makeItem(id: string, overrides: Partial<StoryChecklistItem> = {}): Stor
 
 /** Build a full checklist with optional pre-filled values */
 function makeChecklist(fills: Record<string, string | string[]> = {}): StoryChecklistItem[] {
-  const ids = ['what_happened', 'event_kind', 'who_affected', 'impact_scope', 'user_impact', 'timing', 'action_required', 'what_to_do', 'security', 'error_location', 'field_context']
+  const ids = ['what_happened', 'event_trigger', 'who_affected', 'impact_scope', 'user_impact', 'timing', 'action_required', 'what_to_do', 'security']
   return ids.map(id => {
     if (fills[id] !== undefined) {
       return makeItem(id, { filled: true, value: fills[id], source: 'user', verified: true })
@@ -44,12 +44,22 @@ function makeChecklist(fills: Record<string, string | string[]> = {}): StoryChec
 
 describe('FIELD_ALLOWED_VALUES', () => {
   it('defines constraints for classification-critical fields', () => {
-    expect(FIELD_ALLOWED_VALUES.event_kind).toContain('system_change')
-    expect(FIELD_ALLOWED_VALUES.event_kind).toContain('error_issue')
+    expect(FIELD_ALLOWED_VALUES.event_trigger).toContain('user_interaction')
+    expect(FIELD_ALLOWED_VALUES.event_trigger).toContain('system_runtime')
+    expect(FIELD_ALLOWED_VALUES.event_trigger).toContain('scheduled_system')
+    expect(FIELD_ALLOWED_VALUES.event_trigger).toContain('scheduled_user')
     expect(FIELD_ALLOWED_VALUES.user_impact).toContain('blocked')
     expect(FIELD_ALLOWED_VALUES.timing).toContain('now')
     expect(FIELD_ALLOWED_VALUES.timing).toContain('scheduled')
     expect(FIELD_ALLOWED_VALUES.action_required).toContain('mandatory')
+    expect(FIELD_ALLOWED_VALUES.action_required).toContain('no')
+  })
+
+  it('does not include removed values', () => {
+    expect(FIELD_ALLOWED_VALUES.event_trigger).not.toContain('system_change')
+    expect(FIELD_ALLOWED_VALUES.timing).not.toContain('resolved')
+    expect(FIELD_ALLOWED_VALUES.action_required).not.toContain('recommended')
+    expect(FIELD_ALLOWED_VALUES.error_location).toBeUndefined()
   })
 })
 
@@ -58,79 +68,92 @@ describe('FIELD_ALLOWED_VALUES', () => {
 // ---------------------------------------------------------------------------
 
 describe('deriveClassification', () => {
-  it('returns null when event_kind is not filled', () => {
+  it('returns null when event_trigger is not filled', () => {
     const cl = makeChecklist()
     expect(deriveClassification(cl)).toBeNull()
   })
 
-  it('classifies error_issue as Error/Warning', () => {
-    const cl = makeChecklist({ event_kind: 'error_issue' })
-    const result = deriveClassification(cl)
-    expect(result).not.toBeNull()
-    expect(result!.type).toContain('Error') // i18n key resolves to something with "Error"
-    expect(result!.confidence).toBeGreaterThan(0)
+  it('classifies all events as Notification (single path)', () => {
+    for (const trigger of ['user_interaction', 'system_runtime', 'scheduled_system', 'scheduled_user']) {
+      const cl = makeChecklist({ event_trigger: trigger })
+      const result = deriveClassification(cl)
+      expect(result).not.toBeNull()
+      expect(result!.confidence).toBeGreaterThan(0)
+    }
   })
 
-  it('classifies error_issue with specific_field as Validation Message', () => {
-    const cl = makeChecklist({ event_kind: 'error_issue', error_location: 'specific_field' })
-    const result = deriveClassification(cl)
-    expect(result).not.toBeNull()
-    expect(result!.confidence).toBe(0.85)
-  })
-
-  it('classifies user_action as Feedback', () => {
-    const cl = makeChecklist({ event_kind: 'user_action' })
-    const result = deriveClassification(cl)
-    expect(result).not.toBeNull()
-    expect(result!.confidence).toBe(0.7)
-  })
-
-  it('classifies user_action with form context as Validation Message', () => {
-    const cl = makeChecklist({ event_kind: 'user_action', field_context: 'form' })
-    const result = deriveClassification(cl)
-    expect(result).not.toBeNull()
-    expect(result!.confidence).toBe(0.8)
-  })
-
-  it('classifies system_change as Notification with severity', () => {
+  it('produces CRITICAL severity for blocked + widespread + now', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       user_impact: 'blocked',
       impact_scope: 'widespread',
       timing: 'now',
-      action_required: 'mandatory',
     })
     const result = deriveClassification(cl)
     expect(result).not.toBeNull()
-    expect(result!.severity).not.toBeNull()
-    expect(result!.channels.length).toBeGreaterThan(0)
+    expect(result!.severity).toBe('CRITICAL')
+    expect(result!.channels).toContain('Banner')
   })
 
-  it('classifies process_update as Notification', () => {
-    const cl = makeChecklist({ event_kind: 'process_update' })
+  it('produces HIGH severity for blocked + limited + now', () => {
+    const cl = makeChecklist({
+      event_trigger: 'system_runtime',
+      user_impact: 'blocked',
+      impact_scope: 'limited',
+      timing: 'now',
+    })
     const result = deriveClassification(cl)
     expect(result).not.toBeNull()
+    expect(result!.severity).toBe('HIGH')
   })
 
-  it('handles freeform event kind (unknown value) as Notification', () => {
-    const cl = makeChecklist({ event_kind: 'custom_freeform_event' })
+  it('produces CRITICAL severity for security concern + now', () => {
+    const cl = makeChecklist({
+      event_trigger: 'system_runtime',
+      security: 'yes',
+      timing: 'now',
+    })
+    const result = deriveClassification(cl)
+    expect(result).not.toBeNull()
+    expect(result!.severity).toBe('CRITICAL')
+  })
+
+  it('produces LOW severity with minimal input (trigger only)', () => {
+    const cl = makeChecklist({ event_trigger: 'user_interaction' })
+    const result = deriveClassification(cl)
+    expect(result).not.toBeNull()
+    expect(result!.severity).toBe('LOW')
+  })
+
+  it('handles freeform event trigger as Notification', () => {
+    const cl = makeChecklist({ event_trigger: 'custom_freeform_event' })
     const result = deriveClassification(cl)
     expect(result).not.toBeNull()
   })
 
   it('increases confidence as more fields are filled', () => {
-    const cl1 = makeChecklist({ event_kind: 'system_change' })
+    const cl1 = makeChecklist({ event_trigger: 'system_runtime' })
     const cl2 = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       what_happened: 'API outage',
       who_affected: 'all users',
       user_impact: 'blocked',
-      timing: 'now',
       action_required: 'no',
+      security: 'no',
     })
     const r1 = deriveClassification(cl1)
     const r2 = deriveClassification(cl2)
     expect(r2!.confidence).toBeGreaterThan(r1!.confidence)
+  })
+
+  it('returns channels matching severity level', () => {
+    const cl = makeChecklist({
+      event_trigger: 'system_runtime',
+      user_impact: 'blocked',
+      impact_scope: 'widespread',
+    })
+    const result = deriveClassification(cl)
+    expect(result!.channels.length).toBeGreaterThan(0)
   })
 })
 
@@ -144,9 +167,9 @@ describe('composeStory', () => {
     expect(composeStory(cl)).toBe('')
   })
 
-  it('includes What section from event_kind and what_happened', () => {
+  it('includes What section from event_trigger and what_happened', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'scheduled_system',
       what_happened: 'We are rotating all API keys.',
     })
     const story = composeStory(cl)
@@ -156,7 +179,7 @@ describe('composeStory', () => {
 
   it('includes Who section', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       who_affected: 'all users',
       user_impact: 'degraded',
     })
@@ -166,14 +189,14 @@ describe('composeStory', () => {
   })
 
   it('includes When section', () => {
-    const cl = makeChecklist({ event_kind: 'system_change', timing: 'scheduled' })
+    const cl = makeChecklist({ event_trigger: 'scheduled_system', timing: 'scheduled' })
     const story = composeStory(cl)
     expect(story).toContain('When:')
   })
 
   it('includes What to do section when action is required', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'scheduled_system',
       action_required: 'mandatory',
       what_to_do: 'Rotate your API keys before March 31.',
     })
@@ -184,7 +207,7 @@ describe('composeStory', () => {
 
   it('omits What to do section when action_required is "no" with regular text', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       action_required: 'no',
       what_to_do: 'This should not appear.',
     })
@@ -194,7 +217,7 @@ describe('composeStory', () => {
 
   it('shows "No action required" when what_to_do is "no_action"', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       action_required: 'no',
       what_to_do: 'no_action',
     })
@@ -205,7 +228,7 @@ describe('composeStory', () => {
 
   it('includes security note when security is yes', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       security: 'yes',
     })
     const story = composeStory(cl)
@@ -214,7 +237,7 @@ describe('composeStory', () => {
 
   it('separates sections with blank lines', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'scheduled_system',
       what_happened: 'API maintenance',
       who_affected: 'all users',
       timing: 'scheduled',
@@ -236,7 +259,7 @@ describe('assessChannelQuality', () => {
   })
 
   it('assesses Banner channel as needs-work when incomplete', () => {
-    const cl = makeChecklist({ event_kind: 'system_change' })
+    const cl = makeChecklist({ event_trigger: 'system_runtime' })
     const result = assessChannelQuality(cl, ['Banner (persistent)'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('needs-work')
@@ -244,7 +267,7 @@ describe('assessChannelQuality', () => {
 
   it('assesses Banner channel as good when all required fields filled', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       what_happened: 'API outage',
       timing: 'now',
       action_required: 'no',
@@ -255,7 +278,7 @@ describe('assessChannelQuality', () => {
   })
 
   it('assesses Email channel as needs-work when incomplete', () => {
-    const cl = makeChecklist({ event_kind: 'system_change' })
+    const cl = makeChecklist({ event_trigger: 'system_runtime' })
     const result = assessChannelQuality(cl, ['Email (High Importance)'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('needs-work')
@@ -263,7 +286,7 @@ describe('assessChannelQuality', () => {
 
   it('assesses Email channel as good when all required fields filled', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       what_happened: 'API outage',
       who_affected: 'all users',
       user_impact: 'blocked',
@@ -276,7 +299,7 @@ describe('assessChannelQuality', () => {
 
   it('assesses Dashboard channel', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       what_happened: 'API outage',
     })
     const result = assessChannelQuality(cl, ['Dashboard'])
@@ -284,16 +307,9 @@ describe('assessChannelQuality', () => {
     expect(result[0]!.status).toBe('good')
   })
 
-  it('assesses default channels (Toast, Inline)', () => {
-    const cl = makeChecklist({ what_happened: 'Something' })
-    const result = assessChannelQuality(cl, ['Toast Notification'])
-    expect(result).toHaveLength(1)
-    expect(result[0]!.status).toBe('good')
-  })
-
   it('handles multiple channels', () => {
     const cl = makeChecklist({
-      event_kind: 'system_change',
+      event_trigger: 'system_runtime',
       what_happened: 'API outage',
       timing: 'now',
       action_required: 'mandatory',

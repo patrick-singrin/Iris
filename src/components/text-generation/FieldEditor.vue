@@ -75,30 +75,31 @@ function handleChange(event: CustomEvent) {
 
 <template>
   <div class="field-editor">
+    <!-- Select fields: displayed as label + tag (static info) -->
     <template v-if="field.type === 'select'">
-      <scale-text-field
-        :label="field.label"
-        :value="fieldText || field.options?.[0] || 'N/A'"
-        :helper-text="field.description || undefined"
-        readonly
-      ></scale-text-field>
+      <div class="field-editor__static">
+        <span class="field-editor__static-label">{{ field.label }}</span>
+        <scale-tag size="small">{{ fieldText || field.options?.[0] || 'N/A' }}</scale-tag>
+      </div>
     </template>
+
+    <!-- Short text fields -->
     <template v-else-if="isShortField">
       <scale-text-field
         :label="field.label"
         :value="fieldText"
-        :helper-text="field.description || undefined"
         :max-length="field.maxChars || undefined"
         :counter="!!field.maxChars"
         :required="field.required || undefined"
         @scaleChange="handleChange"
       ></scale-text-field>
     </template>
+
+    <!-- Long text fields (textarea) -->
     <template v-else>
       <scale-textarea
         :label="field.label"
         :value="fieldText"
-        :helper-text="field.description || undefined"
         :max-length="field.maxChars || undefined"
         :counter="!!field.maxChars"
         :required="field.required || undefined"
@@ -114,5 +115,18 @@ function handleChange(event: CustomEvent) {
 .field-editor {
   display: flex;
   flex-direction: column;
+}
+
+.field-editor__static {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-editor__static-label {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--telekom-color-text-and-icon-standard, #000);
 }
 </style>

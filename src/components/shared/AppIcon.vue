@@ -18,6 +18,7 @@ withDefaults(defineProps<{
 export type IconName =
   | 'check'
   | 'chevron-down'
+  | 'chevron-up'
   | 'chevron-left'
   | 'plus'
   | 'info'
@@ -25,6 +26,11 @@ export type IconName =
   | 'search'
   | 'circle-check'
   | 'circle-empty'
+  | 'trash-2'
+  | 'file-text'
+  | 'chat-bubble'
+  | 'question-box'
+  | 'send'
 </script>
 
 <template>
@@ -51,6 +57,16 @@ export type IconName =
     <path
       v-else-if="name === 'chevron-down'"
       d="M4 6l4 4 4-4"
+      stroke="currentColor"
+      :stroke-width="strokeWidth"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Chevron up -->
+    <path
+      v-else-if="name === 'chevron-up'"
+      d="M4 10l4-4 4 4"
       stroke="currentColor"
       :stroke-width="strokeWidth"
       stroke-linecap="round"
@@ -110,6 +126,47 @@ export type IconName =
       r="7"
       stroke="currentColor"
       :stroke-width="strokeWidth"
+    />
+
+    <!-- Trash / delete -->
+    <template v-else-if="name === 'trash-2'">
+      <path d="M2 4h12" stroke="currentColor" :stroke-width="strokeWidth" stroke-linecap="round" />
+      <path d="M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4" stroke="currentColor" :stroke-width="strokeWidth" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M3 4l.75 9.5a1 1 0 0 0 1 .9h6.5a1 1 0 0 0 1-.9L13 4" stroke="currentColor" :stroke-width="strokeWidth" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M6.5 7v4M9.5 7v4" stroke="currentColor" :stroke-width="strokeWidth" stroke-linecap="round" />
+    </template>
+
+    <!-- File text -->
+    <template v-else-if="name === 'file-text'">
+      <path d="M9.5 1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5L9.5 1z" stroke="currentColor" :stroke-width="strokeWidth" stroke-linejoin="round" />
+      <path d="M9.5 1V5H13" stroke="currentColor" :stroke-width="strokeWidth" stroke-linejoin="round" />
+      <path d="M5.5 8h5M5.5 10.5h5M5.5 5.5h1" stroke="currentColor" :stroke-width="strokeWidth" stroke-linecap="round" />
+    </template>
+
+    <!-- Chat bubble -->
+    <path
+      v-else-if="name === 'chat-bubble'"
+      d="M2.667 3.333A1.333 1.333 0 0 1 4 2h8a1.333 1.333 0 0 1 1.333 1.333v6A1.333 1.333 0 0 1 12 10.667H5.333L2.667 13.333V3.333Z"
+      stroke="currentColor"
+      :stroke-width="strokeWidth"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Question box (rounded rect with ?) -->
+    <template v-else-if="name === 'question-box'">
+      <rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" :stroke-width="strokeWidth" fill="none" />
+      <text x="8" y="12" text-anchor="middle" font-size="10" font-weight="700" font-family="TeleNeo, sans-serif" fill="currentColor">?</text>
+    </template>
+
+    <!-- Send arrow (paper plane style) -->
+    <path
+      v-else-if="name === 'send'"
+      d="M14 2L7 9M14 2L9.5 14L7 9M14 2L2 6.5L7 9"
+      stroke="currentColor"
+      :stroke-width="strokeWidth"
+      stroke-linecap="round"
+      stroke-linejoin="round"
     />
   </svg>
 </template>

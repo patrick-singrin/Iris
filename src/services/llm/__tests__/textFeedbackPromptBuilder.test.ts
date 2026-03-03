@@ -15,7 +15,7 @@ describe('parseTextFeedbackResponse', () => {
     const result = parseTextFeedbackResponse(response)
     expect(result.message).toBe("Here's what I changed.")
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.en).toBe('Updated headline')
+    expect(result.changes!.banner!.headline!.en).toBe('Updated headline')
   })
 
   it('returns message only when no marker and no JSON', () => {
@@ -37,7 +37,7 @@ describe('parseTextFeedbackResponse', () => {
     const response = `Updated text below.\n\n---changes---\n${VALID_CHANGES}`
     const result = parseTextFeedbackResponse(response)
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.de).toBe('Aktualisierte Überschrift')
+    expect(result.changes!.banner!.headline!.de).toBe('Aktualisierte Überschrift')
   })
 
   it('extracts changes with spaced marker', () => {
@@ -58,7 +58,7 @@ describe('parseTextFeedbackResponse', () => {
     const response = `I've updated the banner text.\n\n\`\`\`json\n${VALID_CHANGES}\n\`\`\``
     const result = parseTextFeedbackResponse(response)
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.en).toBe('Updated headline')
+    expect(result.changes!.banner!.headline!.en).toBe('Updated headline')
     expect(result.message).not.toContain('```')
   })
 
@@ -73,7 +73,7 @@ describe('parseTextFeedbackResponse', () => {
     const response = `Here's an example:\n${firstBlock}\n\nAnd here are the changes:\n\`\`\`json\n${VALID_CHANGES}\n\`\`\``
     const result = parseTextFeedbackResponse(response)
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.en).toBe('Updated headline')
+    expect(result.changes!.banner!.headline!.en).toBe('Updated headline')
   })
 
   // ---- Strategy 4: Trailing JSON object ----
@@ -82,7 +82,7 @@ describe('parseTextFeedbackResponse', () => {
     const response = `I've made the banner shorter and more urgent.\n\n${VALID_CHANGES}`
     const result = parseTextFeedbackResponse(response)
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.en).toBe('Updated headline')
+    expect(result.changes!.banner!.headline!.en).toBe('Updated headline')
   })
 
   // ---- Validation ----
@@ -103,8 +103,8 @@ describe('parseTextFeedbackResponse', () => {
     const response = `Updated both.\n\n---CHANGES---\n${multiChanges}`
     const result = parseTextFeedbackResponse(response)
     expect(result.changes).not.toBeNull()
-    expect(result.changes!.banner.headline.en).toBe('Banner EN')
-    expect(result.changes!.email.subject.en).toBe('Email EN')
+    expect(result.changes!.banner!.headline!.en).toBe('Banner EN')
+    expect(result.changes!.email!.subject!.en).toBe('Email EN')
   })
 
   it('handles malformed JSON via robustJsonParse repair', () => {

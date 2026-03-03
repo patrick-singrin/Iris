@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -17,15 +18,7 @@ defineProps<{
     <div class="history-item__top">
       <div class="history-item__left">
         <div class="history-item__icon" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path
-              d="M2.667 3.333A1.333 1.333 0 0 1 4 2h8a1.333 1.333 0 0 1 1.333 1.333v6A1.333 1.333 0 0 1 12 10.667H5.333L2.667 13.333V3.333Z"
-              stroke="currentColor"
-              stroke-width="1.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <AppIcon name="chat-bubble" :stroke-width="1.2" />
         </div>
         <span class="history-item__question">{{ questionText }}</span>
       </div>

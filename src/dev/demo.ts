@@ -17,16 +17,14 @@ What to do: Update your applications with the new API key before the rotation wi
 
 const DEMO_CHECKLIST_VALUES: Record<string, { value: string | string[]; description?: string }> = {
   what_happened: { value: 'API key rotation on AIFS LLM Hub platform', description: 'Scheduled API key rotation' },
-  event_kind: { value: 'system_change', description: 'System change' },
-  who_affected: { value: ['API consumers', 'Developers'], description: 'Developers and API consumers' },
+  event_trigger: { value: 'scheduled_system', description: 'Scheduled system event' },
+  who_affected: { value: 'all_users', description: 'Developers and API consumers' },
   impact_scope: { value: 'widespread', description: 'All API key holders' },
   user_impact: { value: 'degraded', description: 'Applications will lose access if keys are not updated' },
   timing: { value: 'scheduled', description: 'Scheduled for March 15, 2026' },
-  lead_time: { value: '1_to_7_days', description: '3 days lead time' },
   action_required: { value: 'mandatory', description: 'Must regenerate API keys' },
-  action_description: { value: 'Regenerate API keys in the Developer Portal before March 15', description: 'Update keys in Developer Portal' },
-  workaround: { value: 'yes_documented', description: 'Pre-generate new keys via Developer Portal' },
-  security_compliance: { value: 'no', description: 'No security/compliance implications' },
+  what_to_do: { value: 'Regenerate API keys in the Developer Portal before March 15', description: 'Update keys in Developer Portal' },
+  security: { value: 'no', description: 'No security/compliance implications' },
 }
 
 function buildDemoGeneratedText(): GeneratedText {

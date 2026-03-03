@@ -39,7 +39,7 @@ function makeItem(id: string, overrides: Partial<StoryChecklistItem> = {}): Stor
   }
 }
 
-function makeChecklist(ids: string[] = ['event_kind', 'what_happened', 'timing', 'user_impact', 'who_affected', 'action_required', 'what_to_do', 'security', 'error_location', 'impact_scope', 'field_context']): StoryChecklistItem[] {
+function makeChecklist(ids: string[] = ['event_trigger', 'what_happened', 'timing', 'user_impact', 'who_affected', 'action_required', 'what_to_do', 'security', 'impact_scope']): StoryChecklistItem[] {
   return ids.map(id => makeItem(id))
 }
 
@@ -110,7 +110,7 @@ describe('parseAnalysisResponse', () => {
   it('parses valid JSON with items and story', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'API update', evidence: 'rotating keys' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'API update', evidence: 'rotating keys' },
       ],
       story: 'What:\nAPI keys are being rotated.',
     })
@@ -119,8 +119,8 @@ describe('parseAnalysisResponse', () => {
     const result = parseAnalysisResponse(raw, checklist)
     expect(result.error).toBeNull()
     expect(result.items).toHaveLength(1)
-    expect(result.items[0]!.id).toBe('event_kind')
-    expect(result.items[0]!.value).toBe('system_change')
+    expect(result.items[0]!.id).toBe('event_trigger')
+    expect(result.items[0]!.value).toBe('system_runtime')
     expect(result.story).toContain('What:')
   })
 
@@ -128,7 +128,7 @@ describe('parseAnalysisResponse', () => {
     const raw = JSON.stringify({
       items: [
         { id: 'nonexistent_field', value: 'foo', description: 'x', evidence: 'y' },
-        { id: 'event_kind', value: 'system_change', description: 'x', evidence: 'y' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'x', evidence: 'y' },
       ],
       story: 'What:\nTest',
     })
@@ -136,13 +136,13 @@ describe('parseAnalysisResponse', () => {
 
     const result = parseAnalysisResponse(raw, checklist)
     expect(result.items).toHaveLength(1)
-    expect(result.items[0]!.id).toBe('event_kind')
+    expect(result.items[0]!.id).toBe('event_trigger')
   })
 
   it('rejects items with disallowed enum values', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'invalid_type', description: 'x', evidence: 'y' },
+        { id: 'event_trigger', value: 'invalid_type', description: 'x', evidence: 'y' },
         { id: 'timing', value: 'now', description: 'x', evidence: 'y' },
       ],
       story: 'What:\nTest',
@@ -157,7 +157,7 @@ describe('parseAnalysisResponse', () => {
   it('rejects items without value or evidence', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'x', evidence: '' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'x', evidence: '' },
         { id: 'timing', value: '', description: 'x', evidence: 'some evidence' },
       ],
       story: 'What:\nTest',
@@ -171,16 +171,16 @@ describe('parseAnalysisResponse', () => {
   it('skips already-verified items', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'x', evidence: 'y' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'x', evidence: 'y' },
       ],
       story: 'What:\nTest',
     })
     const checklist = makeChecklist()
-    // Mark event_kind as verified
-    const kindItem = checklist.find(i => i.id === 'event_kind')!
-    kindItem.filled = true
-    kindItem.verified = true
-    kindItem.value = 'error_issue'
+    // Mark event_trigger as verified
+    const triggerItem = checklist.find(i => i.id === 'event_trigger')!
+    triggerItem.filled = true
+    triggerItem.verified = true
+    triggerItem.value = 'user_interaction'
 
     const result = parseAnalysisResponse(raw, checklist)
     expect(result.items).toHaveLength(0)
@@ -189,16 +189,16 @@ describe('parseAnalysisResponse', () => {
   it('accepts items for unverified (LLM-extracted) fields', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'x', evidence: 'y' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'x', evidence: 'y' },
       ],
       story: 'What:\nTest',
     })
     const checklist = makeChecklist()
     // Mark as filled but unverified (LLM-sourced)
-    const kindItem = checklist.find(i => i.id === 'event_kind')!
-    kindItem.filled = true
-    kindItem.verified = false
-    kindItem.value = 'error_issue'
+    const triggerItem = checklist.find(i => i.id === 'event_trigger')!
+    triggerItem.filled = true
+    triggerItem.verified = false
+    triggerItem.value = 'user_interaction'
 
     const result = parseAnalysisResponse(raw, checklist)
     expect(result.items).toHaveLength(1)
@@ -285,7 +285,7 @@ describe('parseTextAnalysisResponse', () => {
   it('parses valid JSON with items', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'API update', evidence: 'rotating keys' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'API update', evidence: 'rotating keys' },
         { id: 'what_happened', value: 'API key rotation', description: 'key rotation', evidence: 'rotating all API keys' },
       ],
     })
@@ -300,15 +300,15 @@ describe('parseTextAnalysisResponse', () => {
   it('accepts items for already-filled fields (re-extraction)', () => {
     const raw = JSON.stringify({
       items: [
-        { id: 'event_kind', value: 'system_change', description: 'x', evidence: 'y' },
+        { id: 'event_trigger', value: 'system_runtime', description: 'x', evidence: 'y' },
       ],
     })
     const checklist = makeChecklist()
     // Mark as filled AND verified — text analysis should still accept it
-    const kindItem = checklist.find(i => i.id === 'event_kind')!
-    kindItem.filled = true
-    kindItem.verified = true
-    kindItem.value = 'error_issue'
+    const triggerItem = checklist.find(i => i.id === 'event_trigger')!
+    triggerItem.filled = true
+    triggerItem.verified = true
+    triggerItem.value = 'user_interaction'
 
     const result = parseTextAnalysisResponse(raw, checklist)
     expect(result.items).toHaveLength(1)

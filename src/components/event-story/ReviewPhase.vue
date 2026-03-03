@@ -11,10 +11,10 @@ const { t } = useI18n()
 const store = useEventStoryStore()
 
 const SEVERITY_COLORS: Record<string, string> = {
-  CRITICAL: '#d90000',
-  HIGH: '#e20074',
-  MEDIUM: '#df9b00',
-  LOW: '#1a8a3f',
+  CRITICAL: 'var(--telekom-color-functional-danger-standard, #d90000)',
+  HIGH: 'var(--telekom-color-primary-standard, #e20074)',
+  MEDIUM: 'var(--telekom-color-functional-warning-standard, #df9b00)',
+  LOW: 'var(--telekom-color-functional-success-standard, #1a8a3f)',
 }
 </script>
 
@@ -89,7 +89,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
   cursor: pointer;
   margin-bottom: 24px;
   transition: color 0.15s;
@@ -113,7 +113,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 .review-phase__subtitle {
   font-size: 14px;
-  color: rgba(0, 0, 0, 0.65);
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
   line-height: 1.5;
   margin: 0;
 }
@@ -131,7 +131,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   font-size: 12px;
   font-weight: 600;
   color: var(--telekom-color-functional-success-standard, #00b367);
-  background: rgba(0, 179, 103, 0.08);
+  background: var(--telekom-color-functional-success-subtle, rgba(0, 179, 103, 0.08));
   padding: 4px 12px;
   border-radius: 12px;
 }

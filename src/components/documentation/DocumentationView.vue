@@ -238,14 +238,14 @@ function getChannelShortName(channel: string): string {
               <div class="events-table__actions">
                 <button
                   class="events-table__action-btn"
-                  :title="'View details ' + event.id"
+                  :title="t('a11y.viewDetails') + ' ' + event.id"
                   @click="viewEvent(event.id)"
                 >
                   <scale-icon-alert-compliance size="16" />
                 </button>
                 <button
                   class="events-table__action-btn"
-                  :title="'Export ' + event.id"
+                  :title="t('a11y.export') + ' ' + event.id"
                   @click="downloadMarkdown(event)"
                 >
                   <scale-icon-action-download size="16" />
@@ -339,7 +339,7 @@ function getChannelShortName(channel: string): string {
 
 .documentation :deep(table) {
   width: 100%;
-  border-bottom: 1px solid #242426;
+  border-bottom: 1px solid var(--telekom-color-ui-border-standard, #242426);
 }
 
 .documentation :deep(td:nth-child(6)),
@@ -394,7 +394,7 @@ function getChannelShortName(channel: string): string {
   font-weight: 500;
   font-size: 12px;
   line-height: 16.2px;
-  color: #242426;
+  color: var(--telekom-color-text-and-icon-standard, #242426);
 }
 
 .events-table__na {

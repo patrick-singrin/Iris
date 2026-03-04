@@ -306,6 +306,28 @@ Subject line formulas by severity:
 - Include reference ID when applicable: `"ref": "IC-20260217-a3f8"`
 - Include machine-actionable fields where possible: `retry_after`, `status_url`, `deprecation_date`
 
+**Temporal framing — events are always NOW or JUST HAPPENED:**
+- Default assumption: the event IS happening right now or HAS JUST happened. This is the core operating model of the tool.
+- Never frame an event as something that WILL happen in the future. Do not use "will be affected", "is planned for", or "will start on".
+- Use present tense ("is affected", "is unavailable", "is experiencing") or present perfect ("has been completed", "has been resolved").
+- The only exception is scheduled events with escalation steps, where early-step text (e.g., "1 week before") may use future framing — see escalation timeline rules below.
+- Even for scheduled events, the default step ("When it occurs") uses present tense.
+- Examples:
+  - CORRECT: "The Login API is currently unavailable."
+  - CORRECT: "Scheduled maintenance has started."
+  - WRONG: "The Login API will be unavailable on March 15."
+  - WRONG: "Maintenance is planned for next Sunday."
+
+**Placeholders in channel text (HARD REQUIREMENT):**
+- All channel text (banner, dashboard, email, status page) MUST use `{placeholder}` tokens for variable values.
+- Replace concrete dates, times, service names, URLs, versions, and regions with the matching placeholder token from the placeholder reference.
+- The narrative/story text uses real values — only channel output text uses placeholders.
+- NEVER output a real date, real service name, or real URL in channel text. Every variable value must be a `{placeholder}`.
+- Examples:
+  - Narrative: "Maintenance on March 15 at 10:00 CET for MagentaCLOUD"
+  - Channel text: "Maintenance on {date} at {start-time} for {service-name}"
+  - WRONG channel text: "Maintenance on March 15 at 10:00 CET for MagentaCLOUD" (concrete values leaked)
+
 **Escalation timeline rules (scheduled notifications):**
 - Scheduled events may use an escalation timeline with multiple communication steps (e.g. Announcement → Reminder → Active)
 - Each step has its own tone and level of urgency:

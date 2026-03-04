@@ -11,7 +11,8 @@ IMPORTANT RULES:
 - Use formal address (Sie) in German.
 - All text must follow the content design principles below.
 - CHARACTER LIMITS ARE HARD LIMITS — NEVER exceed them, not even by 1 character. German text tends to be longer than English; compensate by using shorter phrasing in German. Count characters carefully for each field.
-- PLACEHOLDERS: Replace concrete variable values (dates, times, service names, URLs, versions, regions, etc.) with {placeholder} tokens as defined in the placeholder reference in the user prompt. Keep surrounding text natural. Example: "Maintenance on March 15 at 10:00" becomes "Maintenance on {date} at {start-time}".
+- PLACEHOLDERS (HARD REQUIREMENT): In ALL generated channel text, you MUST replace concrete variable values (dates, times, service names, URLs, versions, regions, etc.) with {placeholder} tokens as defined in the placeholder reference in the user prompt. Do NOT output real dates, real service names, or real URLs in channel text. Keep surrounding text natural. Example: "Maintenance on March 15 at 10:00 for MagentaCLOUD" becomes "Maintenance on {date} at {start-time} for {service-name}".
+- TEMPORAL FRAMING: The event is happening RIGHT NOW or has JUST HAPPENED. Write all text in present tense ("is unavailable", "is affected") or present perfect ("has been resolved"). NEVER use future tense ("will be", "is scheduled for") unless this is an escalation step BEFORE the event occurs (in which case, follow the step's tone guidance).
 - Return your response as a single JSON object (no markdown fences, no explanation).
 
 OUTPUT FORMAT:

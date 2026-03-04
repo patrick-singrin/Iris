@@ -2,6 +2,20 @@
 
 ## High Priority
 
+### Escalation Step section missing in TextOutputView (Needs live debugging)
+- [ ] User reported the EscalationConfigurator didn't appear in the text generation output view
+- [ ] `TextOutputView.vue` guards with `v-if="hasEscalation"` — requires `escalationSteps.value.length > 0`
+- [ ] `ConfigureStep.vue` renders EscalationConfigurator unconditionally and auto-creates a default step on mount
+- [ ] Hypothesis: escalation steps may not survive the configure → generate → output transition in some flows
+- [ ] **Next step:** Add diagnostic logging in `TextOutputView` on mount to check `escalationSteps.value`, then reproduce the user's exact flow
+
+### ~~Temporal framing + placeholder enforcement~~ (Done 2026-03-04)
+- [x] Documented temporal framing requirement in `content-design-principles.md` — events are always present/past, never future
+- [x] Documented placeholder hard requirement in `content-design-principles.md` — channel text must use `{placeholder}` tokens
+- [x] Strengthened system prompt in `promptBuilder.ts` — added TEMPORAL FRAMING rule and upgraded PLACEHOLDERS to HARD REQUIREMENT
+- [x] Strengthened story text generator prompt in `storyTextGenerator.ts` — added temporal framing section and explicit placeholder examples
+- [x] Logged as Decision #11 (temporal framing) and #12 (placeholder enforcement) in `decisions.md`
+
 ### ~~Verify JSON parse fixes in the browser~~ (Done 2026-02-26) — see Completed section
 
 ### ~~Update Q2 hint text~~ (Done 2026-02-26) — see Completed section

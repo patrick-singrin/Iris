@@ -75,3 +75,27 @@ Each failure mode gets its own targeted fix, applied in sequence. See [JSON Pars
 **Decision**: View switching is handled by a simple `activeView` ref in `appStore.ts`.
 
 **Why**: The app is a single-purpose tool, not a multi-page SPA. A full router adds complexity without benefit. Views are switched programmatically.
+
+## 11. Temporal Framing — Events Are Present/Past, Never Future
+
+**Decision**: All generated text assumes the event IS happening right now or HAS JUST happened. Future tense is never used for the default case.
+
+**Why**: Iris is a tool for documenting events that are in progress or just occurred — incident alerts, outages, completed maintenance. The core operating model is reactive (something happened → communicate it), not predictive. Using future tense ("will be unavailable") contradicts the tool's purpose and confuses recipients.
+
+**Exception**: Scheduled events with escalation steps allow future framing ONLY in early escalation steps (e.g., "1 week before"). The at-event step ("When it occurs") still uses present tense.
+
+**Enforcement**: The rule is documented in `content-design-principles.md` (which is injected into the LLM system prompt) and reinforced with explicit temporal framing instructions in both `promptBuilder.ts` and `storyTextGenerator.ts`.
+
+**History**: Added 2026-03-04 after user testing revealed generated text using future dates for events that should be framed as current.
+
+## 12. Placeholder Enforcement in Channel Text
+
+**Decision**: Channel text (banner, dashboard, email, status page) MUST use `{placeholder}` tokens for all variable values. Concrete dates, times, service names, URLs, versions, and regions must never appear in channel output.
+
+**Why**: Channel text is deployed across multiple event instances and should be reusable as a template. Concrete values leak context that makes the text single-use. Placeholders like `{date}` and `{service-name}` make the output a proper template that can be populated per-event.
+
+**Relationship to Decision #1**: Decision #1 established the narrative/channel split (real values in narrative, placeholders in channel text). This decision strengthens enforcement after testing showed the LLM sometimes ignores placeholder instructions, especially with the local 14B model.
+
+**Enforcement**: The rule is documented in `content-design-principles.md` and reinforced with "HARD REQUIREMENT" language in both `promptBuilder.ts` (system prompt) and `storyTextGenerator.ts` (user prompt). A post-processing placeholder replacement step may be added as a safety net in the future.
+
+**History**: Added 2026-03-04 after user testing revealed generated channel text with concrete values instead of placeholder tokens.

@@ -5,6 +5,7 @@ import { createProvider } from '@/services/llm/providerFactory'
 import { fetchLLMHubModels, type LLMHubModel } from '@/services/llm/llmHubProvider'
 import { useI18n } from '@/i18n'
 import ProductContextSection from './ProductContextSection.vue'
+import ConnectionsSection from '@/components/connections/ConnectionsSection.vue'
 
 const { t } = useI18n()
 
@@ -257,6 +258,9 @@ async function testConnection() {
         {{ testMessage }}
       </scale-notification>
     </div>
+
+    <!-- API Connections -->
+    <ConnectionsSection />
 
     <!-- Product Context (extracted sub-component) -->
     <ProductContextSection />

@@ -10,6 +10,8 @@ export interface SettingsState {
   llmHubEndpoint: string
   llmHubApiKey: string
   llmHubModel: string
+  classifierConnectionId: string
+  classifierModelId: string
 }
 
 const STORAGE_KEY = 'iris-settings'
@@ -23,6 +25,8 @@ function loadSettings(): SettingsState {
     llmHubEndpoint: 'https://llm-server.llmhub.t-systems.net/v2',
     llmHubApiKey: '',
     llmHubModel: 'Llama-3.3-70B-Instruct',
+    classifierConnectionId: '',
+    classifierModelId: '',
   }
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) {

@@ -461,6 +461,11 @@ export const de: Record<string, string> = {
   'connections.status.error': 'Verbindung fehlgeschlagen',
   'connections.credentialsSafe': 'Zugangsdaten werden nur lokal in Ihrem Browser gespeichert.',
 
+  // Klassifikator-Modellauswahl
+  'classifier.modelLabel': 'Klassifikator-Modell',
+  'classifier.modelPlaceholder': 'Modell für Klassifikation',
+  'classifier.useGlobal': 'Globale Einstellungen verwenden',
+
   // Chat
   'chat.welcome.title': 'Welchen Produkttext benötigen Sie?',
   'chat.welcome.subtitle': 'Beschreiben Sie das UI-Element oder fügen Sie bestehenden Text zum Optimieren ein. Ich erstelle zweisprachige EN/DE-Vorschläge nach unseren Content Design Principles.',

@@ -7,7 +7,7 @@
  * become visible when viewing the full picture.
  */
 
-import { createProvider } from './providerFactory'
+import { createClassifierProvider } from './providerFactory'
 import type { StoryChecklistItem, StoryClassification, ChannelQuality } from '@/data/story-questions'
 import type { AnalysisResult } from '@/stores/eventStoryStore'
 import { useProductContextStore } from '@/stores/productContextStore'
@@ -166,7 +166,7 @@ export async function runHolisticAnalysis(
 ): Promise<AnalysisResult> {
   const { getProductContext } = useProductContextStore()
   const productContext = await getProductContext()
-  const provider = createProvider()
+  const provider = createClassifierProvider()
   const result = await provider.generateText({
     systemPrompt: buildAnalysisPrompt(checklist, storyText, classification, channelQuality, productContext),
     userPrompt: 'Analyse the event context above and return your assessment.',

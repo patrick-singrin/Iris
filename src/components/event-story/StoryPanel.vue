@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick } from 'vue'
 import ClassificationTile from './ClassificationTile.vue'
 import ReasoningTile from './ReasoningTile.vue'
 import ProgressBar from './ProgressBar.vue'
+import ModelSelector from './ModelSelector.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useProductContextStore } from '@/stores/productContextStore'
@@ -99,6 +100,9 @@ function handleApply() {
 <template>
   <div class="story-panel">
     <div class="story-panel__card">
+      <!-- Model selector (top) -->
+      <ModelSelector />
+
       <!-- Section 1: Event Narrative -->
       <div class="story-panel__section">
         <h3 class="story-panel__title">{{ t('story.narrativeTitle') }}</h3>

@@ -9,7 +9,7 @@
  * Extracted items are stored as unverified — the user must confirm each one.
  */
 
-import { createProvider } from './providerFactory'
+import { createClassifierProvider } from './providerFactory'
 import { robustJsonParse } from './jsonRepair'
 import { FIELD_ALLOWED_VALUES } from '@/data/story-classification'
 import type { StoryChecklistItem } from '@/data/story-questions'
@@ -251,7 +251,7 @@ export async function analyzeConversation(
   try {
     const { getProductContext } = useProductContextStore()
     const productContext = await getProductContext()
-    const provider = createProvider()
+    const provider = createClassifierProvider()
     const result = await callWithRetry(() => provider.generateText({
       systemPrompt: buildSystemPrompt(checklist, productContext),
       userPrompt: buildUserMessage(conversation),
@@ -282,7 +282,7 @@ export async function analyzeText(
   try {
     const { getProductContext } = useProductContextStore()
     const productContext = await getProductContext()
-    const provider = createProvider()
+    const provider = createClassifierProvider()
     const result = await callWithRetry(() => provider.generateText({
       systemPrompt: buildTextAnalysisPrompt(checklist, productContext),
       userPrompt: text,

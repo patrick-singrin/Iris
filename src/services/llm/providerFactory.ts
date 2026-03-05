@@ -2,7 +2,9 @@ import type { LLMProvider } from './types'
 import { AnthropicProvider } from './anthropicProvider'
 import { LMStudioProvider } from './lmStudioProvider'
 import { LLMHubProvider } from './llmHubProvider'
+import { ConnectionProvider } from './connectionProvider'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { useConnectionsStore } from '@/stores/connectionsStore'
 
 export function createProvider(): LLMProvider {
   const { state } = useSettingsStore()
@@ -22,4 +24,23 @@ export function createProvider(): LLMProvider {
   }
 
   return new LMStudioProvider(state.lmStudioEndpoint)
+}
+
+/**
+ * Creates an LLM provider for the classifier/extractor.
+ * Uses the classifier-specific connection+model override if configured,
+ * otherwise falls back to the global provider.
+ */
+export function createClassifierProvider(): LLMProvider {
+  const { state } = useSettingsStore()
+
+  if (state.classifierConnectionId && state.classifierModelId) {
+    const { getConnection } = useConnectionsStore()
+    const conn = getConnection(state.classifierConnectionId)
+    if (conn) {
+      return new ConnectionProvider(conn.endpoint, conn.apiKey, state.classifierModelId)
+    }
+  }
+
+  return createProvider()
 }

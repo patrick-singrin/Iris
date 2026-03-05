@@ -461,6 +461,11 @@ export const en = {
   'connections.status.error': 'Connection failed',
   'connections.credentialsSafe': 'Credentials stored locally in your browser only.',
 
+  // Classifier model selector
+  'classifier.modelLabel': 'Classifier Model',
+  'classifier.modelPlaceholder': 'Model for classification',
+  'classifier.useGlobal': 'Use global settings',
+
   // Chat
   'chat.welcome.title': 'What product copy do you need?',
   'chat.welcome.subtitle': 'Describe the UI element or paste existing text to optimize. I\'ll generate bilingual EN/DE suggestions following our Content Design Principles.',

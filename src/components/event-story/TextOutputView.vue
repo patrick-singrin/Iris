@@ -118,7 +118,7 @@ watch(() => store.savedEventId?.value, (newId) => {
     <h3 class="text-output__title">{{ t('textGen.title') }}</h3>
 
     <!-- Escalation section (collapsible) -->
-    <EscalationConfigurator v-if="hasEscalation" />
+    <EscalationConfigurator />
 
     <!-- Save notification -->
     <div v-if="showSavedNotification" class="text-output__saved">

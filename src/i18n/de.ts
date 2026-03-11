@@ -466,6 +466,14 @@ export const de: Record<string, string> = {
   'classifier.modelPlaceholder': 'Modell für Klassifikation',
   'classifier.useGlobal': 'Globale Einstellungen verwenden',
 
+  // Klassifikationsfortschritt & Escape Hatch
+  'classification.progress.step': 'Schritt {current} von {total}',
+  'classification.progress.complete': 'Klassifikation abgeschlossen',
+  'classification.escapeHatch.noMatch': 'Ihre Beschreibung konnte keiner Option zugeordnet werden. Versuchen Sie es anders zu formulieren.',
+  'classification.escapeHatch.useThis': 'Übernehmen',
+  'classification.escapeHatch.tryAgain': 'Nochmal versuchen',
+  'classification.escapeHatch.nudge': 'Tipp: Versuchen Sie, Ihre Situation mit Schlüsselwörtern aus den obigen Optionen zu beschreiben.',
+
   // Chat
   'chat.welcome.title': 'Welchen Produkttext benötigen Sie?',
   'chat.welcome.subtitle': 'Beschreiben Sie das UI-Element oder fügen Sie bestehenden Text zum Optimieren ein. Ich erstelle zweisprachige EN/DE-Vorschläge nach unseren Content Design Principles.',

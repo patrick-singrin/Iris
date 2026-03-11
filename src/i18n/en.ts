@@ -466,6 +466,14 @@ export const en = {
   'classifier.modelPlaceholder': 'Model for classification',
   'classifier.useGlobal': 'Use global settings',
 
+  // Classification Progress & Escape Hatch
+  'classification.progress.step': 'Step {current} of {total}',
+  'classification.progress.complete': 'Classification complete',
+  'classification.escapeHatch.noMatch': 'Could not match your description to an option. Try rephrasing.',
+  'classification.escapeHatch.useThis': 'Use this',
+  'classification.escapeHatch.tryAgain': 'Try again',
+  'classification.escapeHatch.nudge': 'Tip: Try to describe your situation using keywords from the options above.',
+
   // Chat
   'chat.welcome.title': 'What product copy do you need?',
   'chat.welcome.subtitle': 'Describe the UI element or paste existing text to optimize. I\'ll generate bilingual EN/DE suggestions following our Content Design Principles.',

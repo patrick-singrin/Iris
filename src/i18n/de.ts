@@ -473,6 +473,15 @@ export const de: Record<string, string> = {
   'classification.escapeHatch.useThis': 'Übernehmen',
   'classification.escapeHatch.tryAgain': 'Nochmal versuchen',
   'classification.escapeHatch.nudge': 'Tipp: Versuchen Sie, Ihre Situation mit Schlüsselwörtern aus den obigen Optionen zu beschreiben.',
+  'classification.escapeHatch.trigger': 'Nicht sicher? Beschreiben Sie stattdessen, was passiert',
+  'classification.result.title': 'Klassifizierungsergebnis',
+  'classification.result.phase1Complete': 'Phase 1 abgeschlossen',
+  'classification.result.trigger': 'Auslöser',
+  'classification.result.channels': 'Empfohlene Kanäle',
+  'classification.narrative.who': 'Wer',
+  'classification.narrative.what': 'Was',
+  'classification.narrative.when': 'Wann',
+  'classification.narrative.whatToDo': 'Was ist zu tun',
 
   // Chat
   'chat.welcome.title': 'Welchen Produkttext benötigen Sie?',

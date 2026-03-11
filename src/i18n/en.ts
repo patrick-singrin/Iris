@@ -473,6 +473,15 @@ export const en = {
   'classification.escapeHatch.useThis': 'Use this',
   'classification.escapeHatch.tryAgain': 'Try again',
   'classification.escapeHatch.nudge': 'Tip: Try to describe your situation using keywords from the options above.',
+  'classification.escapeHatch.trigger': 'Not sure? Describe what\'s happening instead',
+  'classification.result.title': 'Classification Result',
+  'classification.result.phase1Complete': 'Phase 1 complete',
+  'classification.result.trigger': 'Trigger',
+  'classification.result.channels': 'Recommended channels',
+  'classification.narrative.who': 'Who',
+  'classification.narrative.what': 'What',
+  'classification.narrative.when': 'When',
+  'classification.narrative.whatToDo': 'What to do',
 
   // Chat
   'chat.welcome.title': 'What product copy do you need?',

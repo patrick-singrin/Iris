@@ -190,4 +190,34 @@ describe('classificationStore', () => {
       expect(store.narrative4W.value.what).toContain(store.result.value!.trigger)
     })
   })
+
+  // -------------------------------------------------------------------------
+  // Task 5: toStoryClassification adapter
+  // -------------------------------------------------------------------------
+  describe('toStoryClassification', () => {
+    it('maps ClassificationResult to StoryClassification shape', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Path to CRITICAL
+      store.answerQuestion(1) // No — independent
+      store.answerQuestion(1) // Specific event -> chains
+      store.answerQuestion(0) // complete outage
+      const sc = store.toStoryClassification(store.result.value!)
+      expect(sc.type).toBe('Notification')
+      expect(sc.severity).toBe('CRITICAL')
+      expect(sc.channels.length).toBeGreaterThan(0)
+      expect(sc.confidence).toBe(1)
+    })
+
+    it('sets severity to null for non-Notification types', () => {
+      const store = useClassificationStore()
+      store.reset()
+      store.answerQuestion(0) // triggered by user
+      store.answerQuestion(0) // problem -> Error & Warnings
+      const sc = store.toStoryClassification(store.result.value!)
+      expect(sc.type).toBe('Error & Warnings')
+      expect(sc.severity).toBeNull()
+      expect(sc.confidence).toBe(1)
+    })
+  })
 })

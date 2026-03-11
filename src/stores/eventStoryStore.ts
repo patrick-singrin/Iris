@@ -546,6 +546,7 @@ export function useEventStoryStore() {
     followUpsDone.value = false
     followUpQueue.value = []
     review.resetReviewState()
+    classificationStore.reset()
     clearPersistedState()
   }
 

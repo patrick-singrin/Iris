@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { RenderableQuestion } from '@/data/story-questions'
+import { createProvider } from '@/services/llm/providerFactory'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -52,7 +53,6 @@ The user described their situation as: "${freeformText.value}"
 Map their description to the most appropriate option. Respond with ONLY a JSON object:
 {"optionIndex": <0-based index>, "label": "<option label>", "explanation": "<1-2 sentence explanation>", "confidence": "high"|"medium"|"low"}`
 
-    const { createProvider } = await import('@/services/llm/providerFactory')
     const provider = createProvider()
     const genResult = await provider.generateText({
       systemPrompt: 'You are helping a user classify a platform event. Respond with ONLY a JSON object.',

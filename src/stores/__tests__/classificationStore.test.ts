@@ -129,4 +129,65 @@ describe('classificationStore', () => {
       expect(store.answeredQuestions.value).toBe(3)
     })
   })
+
+  // -------------------------------------------------------------------------
+  // Task 4: totalQuestions and Narrative4W
+  // -------------------------------------------------------------------------
+  describe('totalQuestions', () => {
+    it('estimates total including remaining questions on longest path', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // At start of info-type tree, total should be > 0
+      expect(store.totalQuestions.value).toBeGreaterThan(0)
+      // After answering first question, total should adjust
+      store.answerQuestion(0)
+      // answeredQuestions increased by 1
+      expect(store.answeredQuestions.value).toBe(1)
+      // total should still be reasonable (2-13 range across both trees)
+      expect(store.totalQuestions.value).toBeGreaterThanOrEqual(2)
+      expect(store.totalQuestions.value).toBeLessThanOrEqual(13)
+    })
+
+    it('equals answeredQuestions when complete', () => {
+      const store = useClassificationStore()
+      store.reset()
+      store.answerQuestion(0) // triggered by user
+      store.answerQuestion(0) // problem -> Error & Warnings
+      expect(store.isComplete.value).toBe(true)
+      expect(store.totalQuestions.value).toBe(store.answeredQuestions.value)
+    })
+  })
+
+  describe('narrative4W', () => {
+    it('always has when = NOW', () => {
+      const store = useClassificationStore()
+      store.reset()
+      expect(store.narrative4W.value.when).toBe('NOW')
+    })
+
+    it('fills who from scope questions in severity tree', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Get to severity tree
+      store.answerQuestion(1) // No — independent
+      store.answerQuestion(1) // A specific event -> Notification -> chains
+      // severity tree: platform
+      store.answerQuestion(1) // No — some services work -> security
+      store.answerQuestion(1) // No security -> impact
+      store.answerQuestion(0) // No — blocked -> blocked_scope
+      store.answerQuestion(0) // Many users -> r_high_blocked_many
+
+      expect(store.narrative4W.value.who).toBe('Many users')
+    })
+
+    it('includes trigger in what field when complete', () => {
+      const store = useClassificationStore()
+      store.reset()
+      store.answerQuestion(1) // No — independent
+      store.answerQuestion(1) // Specific event -> chains
+      store.answerQuestion(0) // complete outage -> CRITICAL result
+      expect(store.result.value?.trigger).toBeTruthy()
+      expect(store.narrative4W.value.what).toContain(store.result.value!.trigger)
+    })
+  })
 })

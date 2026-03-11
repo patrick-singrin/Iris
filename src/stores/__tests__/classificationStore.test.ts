@@ -220,4 +220,54 @@ describe('classificationStore', () => {
       expect(sc.confidence).toBe(1)
     })
   })
+
+  // -------------------------------------------------------------------------
+  // getCurrentQuestion coverage
+  // -------------------------------------------------------------------------
+  describe('getCurrentQuestion', () => {
+    it('returns RenderableQuestion for current tree node', () => {
+      const store = useClassificationStore()
+      store.reset()
+      const q = store.getCurrentQuestion()
+      expect(q).not.toBeNull()
+      expect(q!.origin).toBe('tree')
+      expect(q!.inputType).toBe('single')
+      expect(q!.options.length).toBeGreaterThan(0)
+      expect(q!.allowFreeform).toBe(false)
+      expect(q!.id).toBe('start')
+    })
+
+    it('returns null when classification is complete', () => {
+      const store = useClassificationStore()
+      store.reset()
+      store.answerQuestion(0) // Yes — triggered by user
+      store.answerQuestion(0) // Yes — problem -> Error & Warnings result
+      expect(store.getCurrentQuestion()).toBeNull()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // narrative4W.whatToDo coverage
+  // -------------------------------------------------------------------------
+  describe('narrative4W.whatToDo', () => {
+    // The severity tree (decision-tree_notification-severity.json) does not
+    // currently contain a node with id "action". The narrative4W computed
+    // property does check for entry.nodeId === 'action' to populate whatToDo,
+    // but no path through the current tree reaches such a node.
+    //
+    // When an "action" node is added to the severity tree in a future
+    // revision, a test should be added here that walks to it and verifies
+    // narrative4W.whatToDo gets populated with the selected label.
+
+    it('defaults to empty string when no action node is visited', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Walk to a CRITICAL result — no action node on this path
+      store.answerQuestion(1) // No — independent
+      store.answerQuestion(1) // Specific event -> Notification -> chains
+      store.answerQuestion(0) // complete outage -> CRITICAL
+      expect(store.isComplete.value).toBe(true)
+      expect(store.narrative4W.value.whatToDo).toBe('')
+    })
+  })
 })

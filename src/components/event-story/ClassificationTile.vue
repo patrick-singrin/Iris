@@ -23,6 +23,12 @@ const TYPE_TAG_STYLES: Record<string, { bg: string; text: string }> = {
   'Error or issue':  { bg: 'var(--telekom-color-functional-danger-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-danger)' },
   'System change':   { bg: 'var(--telekom-color-additional-cyan-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-cyan)' },
   'Process update':  { bg: 'var(--telekom-color-additional-yellow-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-yellow)' },
+  // Tree-based keys (from decision tree classification)
+  'Error & Warnings':           { bg: 'var(--telekom-color-functional-danger-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-danger)' },
+  'Status Display':             { bg: 'var(--telekom-color-additional-cyan-subtle)', text: 'var(--telekom-color-text-and-icon-on-subtle-cyan)' },
+  'Feedback':                   { bg: 'var(--telekom-color-ui-faint)', text: 'var(--telekom-color-text-and-icon-standard)' },
+  'Validation Messages':        { bg: 'var(--telekom-color-ui-faint)', text: 'var(--telekom-color-text-and-icon-standard)' },
+  'Transactional Confirmation': { bg: 'var(--telekom-color-ui-faint)', text: 'var(--telekom-color-text-and-icon-standard)' },
 }
 
 const DEFAULT_TAG_STYLE = { bg: 'var(--telekom-color-ui-faint)', text: 'var(--telekom-color-text-and-icon-standard)' }

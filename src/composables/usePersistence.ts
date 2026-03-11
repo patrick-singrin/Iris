@@ -20,7 +20,7 @@ export interface AnsweredQuestion {
   selectedOptions: string[]
   freeformText: string
   timestamp: string
-  origin: 'default' | 'verify' | 'followup' | 'text_edit'
+  origin: 'default' | 'verify' | 'followup' | 'text_edit' | 'tree'
 }
 
 const STORAGE_KEY = 'iris-event-story-state'

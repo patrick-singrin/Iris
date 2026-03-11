@@ -127,8 +127,8 @@ export interface RenderableQuestion {
   options: StoryQuestionOption[]
   allowFreeform: boolean
   freeformPlaceholder?: string
-  origin: 'default' | 'verify' | 'followup'
-  targetChecklistItems: string[]
+  origin: 'default' | 'verify' | 'followup' | 'tree'
+  targetChecklistItems?: string[]
   // Verification-specific:
   verifyItemId?: string
   verifyValue?: string | string[]

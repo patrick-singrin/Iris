@@ -1,15 +1,38 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import ClassificationTile from './ClassificationTile.vue'
+import ClassificationProgress from './ClassificationProgress.vue'
 import ReasoningTile from './ReasoningTile.vue'
 import ProgressBar from './ProgressBar.vue'
 import ModelSelector from './ModelSelector.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
+import { useClassificationStore } from '@/stores/classificationStore'
 import { useProductContextStore } from '@/stores/productContextStore'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
+
+const classificationStore = useClassificationStore()
+
+const isClassifying = computed(() => !classificationStore.isComplete.value)
+
+// Narrative text for the textarea during classification
+const classificationNarrative = computed(() => {
+  const n = classificationStore.narrative4W.value
+  const lines: string[] = []
+  if (n.who) lines.push(`${t('classification.narrative.who')}: ${n.who}`)
+  if (n.what) lines.push(`${t('classification.narrative.what')}: ${n.what}`)
+  lines.push(`${t('classification.narrative.when')}: ${n.when}`)
+  if (n.whatToDo) lines.push(`${t('classification.narrative.whatToDo')}: ${n.whatToDo}`)
+  return lines.join('\n')
+})
+
+// Classification result mapped for ClassificationTile
+const treeClassification = computed(() => {
+  if (!classificationStore.result.value) return null
+  return classificationStore.toStoryClassification(classificationStore.result.value)
+})
 
 const {
   storyText,
@@ -100,8 +123,8 @@ function handleApply() {
 <template>
   <div class="story-panel">
     <div class="story-panel__card">
-      <!-- Model selector (top) -->
-      <ModelSelector />
+      <!-- Model selector (top, hidden during classification) -->
+      <ModelSelector v-if="!isClassifying" />
 
       <!-- Section 1: Event Narrative -->
       <div class="story-panel__section">
@@ -112,12 +135,12 @@ function handleApply() {
 
         <scale-textarea
           ref="textareaRef"
-          :value="draftText"
+          :value="isClassifying ? classificationNarrative : draftText"
           :label="t('story.narrativeLabel')"
           :placeholder="t('story.narrativePlaceholder')"
           rows="10"
           resize="vertical"
-          :readonly="isReadOnly"
+          :readonly="isReadOnly || isClassifying"
           @scaleChange="handleStoryInput"
         />
 
@@ -126,7 +149,14 @@ function handleApply() {
           <scale-button size="small" @click="handleApply">{{ t('story.applyChanges') }}</scale-button>
         </div>
 
+        <ClassificationProgress
+          v-if="isClassifying"
+          :current="classificationStore.answeredQuestions.value"
+          :total="classificationStore.totalQuestions.value"
+          :complete="classificationStore.isComplete.value"
+        />
         <ProgressBar
+          v-else
           :verified="checklistProgress.verified"
           :unverified="checklistProgress.unverified"
           :total="checklist.length"
@@ -135,12 +165,12 @@ function handleApply() {
 
       <!-- Section 2: Classification Tile -->
       <ClassificationTile
-        :classification="classification"
+        :classification="isClassifying ? treeClassification : classification"
         :checklist="checklist"
       />
 
-      <!-- Section 3: Product Context + Reasoning -->
-      <div class="story-panel__bottom">
+      <!-- Section 3: Product Context + Reasoning (hidden during classification) -->
+      <div v-if="!isClassifying" class="story-panel__bottom">
         <div class="product-context-row">
           <scale-switch
             :checked="pcState.enabled"

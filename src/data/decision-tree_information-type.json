@@ -2,22 +2,22 @@
   "id": "information-type",
   "name": "Event Type Classification",
   "description": "Classifies a platform event into one of six communication types based on observable event characteristics. Each question asks about something the product team concretely knows about their event — no circular reasoning or presupposed knowledge of the outcome.",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "entryNode": "start",
   "nodes": {
     "start": {
       "type": "question",
-      "text": "Is the end user actively doing something when this event occurs?",
-      "description": "The event is a direct result of the user's current action: clicking a button, submitting a form, making an API call, uploading a file, configuring settings.",
+      "text": "Is the user actively doing something?",
+      "description": "Think about what triggers this event. Is the user in the middle of an action right now?",
       "options": [
         {
-          "label": "Yes, the user is performing an action",
-          "description": "The user triggered this directly — they clicked, submitted, requested, typed, or configured something",
+          "label": "Yes — triggered by the user",
+          "description": "A click, form submission, API call, upload, or setting change",
           "next": "user_problem_check"
         },
         {
-          "label": "No, this happens independently",
-          "description": "A system process, admin change, scheduled event, or background operation — not triggered by the current user's action",
+          "label": "No — it happens independently",
+          "description": "System process, admin change, scheduled task, or background operation",
           "next": "system_temporality"
         }
       ]
@@ -25,17 +25,17 @@
 
     "user_problem_check": {
       "type": "question",
-      "text": "Is there a problem, error, or warning?",
-      "description": "Something went wrong, failed, or needs the user's attention to fix: errors, failed requests, permission issues, exceeded limits, or warnings about potential problems.",
+      "text": "Did something go wrong?",
+      "description": "Consider whether the user's action led to a problem that needs their attention.",
       "options": [
         {
-          "label": "Yes, something is wrong",
-          "description": "An error occurred, a request failed, a limit was exceeded, or there is a warning about a potential issue",
+          "label": "Yes — there's a problem",
+          "description": "A request failed, a limit was hit, permissions denied, or something broke",
           "next": "result_error_warning"
         },
         {
-          "label": "No, everything is fine",
-          "description": "The action succeeded or the user is in the middle of a normal workflow",
+          "label": "No — everything worked",
+          "description": "The action succeeded or the user is mid-workflow",
           "next": "user_form_check"
         }
       ]
@@ -43,17 +43,17 @@
 
     "user_form_check": {
       "type": "question",
-      "text": "Is this about guiding the user's input in a form field?",
-      "description": "The user is actively filling in a form and needs guidance: required-field indicators, format rules (e.g. email format), character limits, password requirements, uniqueness checks.",
+      "text": "Is this about a form field?",
+      "description": "Is the user currently typing into a field and getting guidance on what to enter?",
       "options": [
         {
-          "label": "Yes, it's form input guidance",
-          "description": "Helping the user enter valid data: required fields, format hints, constraints, live validation feedback",
+          "label": "Yes — it guides the user's input",
+          "description": "Format hints, required markers, character limits, validation feedback",
           "next": "result_validation"
         },
         {
-          "label": "No, this isn't about form input",
-          "description": "The user completed an action or started a process — not actively typing into a field",
+          "label": "No — the user completed an action",
+          "description": "A task finished or a process started",
           "next": "user_outcome"
         }
       ]
@@ -61,22 +61,22 @@
 
     "user_outcome": {
       "type": "question",
-      "text": "What best describes the outcome of the user's action?",
-      "description": "The user's action succeeded. How should the system respond?",
+      "text": "What happens after the user's action?",
+      "description": "The action succeeded. What does the user see or need next?",
       "options": [
         {
-          "label": "A record or receipt the user needs to keep",
-          "description": "The user will need to reference this later: generated API key, confirmation number, transaction ID, created resource with details",
+          "label": "A record the user needs to keep",
+          "description": "API key, confirmation number, transaction ID, or resource details",
           "next": "result_transactional_confirmation"
         },
         {
-          "label": "An ongoing process begins that shows progress",
-          "description": "Something is now running: file upload, model training, deployment pipeline, data export, batch processing",
+          "label": "A process starts and shows progress",
+          "description": "File upload, model training, deployment, or data export",
           "next": "result_status_display_process"
         },
         {
-          "label": "The action is acknowledged",
-          "description": "A quick 'it worked' confirmation: 'Saved', 'Copied', 'Deleted', 'Updated' — appears briefly, then disappears",
+          "label": "A quick acknowledgment",
+          "description": "\"Saved\", \"Copied\", \"Deleted\" — brief and auto-dismissing",
           "next": "result_feedback"
         }
       ]
@@ -84,17 +84,17 @@
 
     "system_temporality": {
       "type": "question",
-      "text": "Does this represent an ongoing condition or a specific event?",
-      "description": "Ongoing conditions are current states that persist and may change at any moment (like a health dashboard). Specific events are discrete things that happened or will happen at a particular time (like a maintenance window).",
+      "text": "Is this an ongoing condition or a one-time event?",
+      "description": "Does it persist and change over time, or did it happen at a specific moment?",
       "options": [
         {
-          "label": "An ongoing condition that may change at any time",
-          "description": "Current state that persists: service health, API availability, quota usage, connection status, model availability",
+          "label": "Ongoing condition",
+          "description": "Service health, API availability, quota usage, connection status",
           "next": "result_status_display_system"
         },
         {
-          "label": "A specific event, change, or announcement",
-          "description": "Something discrete: scheduled maintenance, model deprecation, pricing change, outage, security advisory, feature release",
+          "label": "A specific event or announcement",
+          "description": "Maintenance, deprecation, pricing change, outage, or feature release",
           "next": "result_notification"
         }
       ]

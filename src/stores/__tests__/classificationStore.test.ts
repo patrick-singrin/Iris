@@ -81,4 +81,52 @@ describe('classificationStore', () => {
       expect(store.result.value!.channels).toEqual(['Inline at point of action'])
     })
   })
+
+  // -------------------------------------------------------------------------
+  // Task 3: Tree chaining (Notification -> severity)
+  // -------------------------------------------------------------------------
+  describe('tree chaining (Notification -> severity)', () => {
+    it('seamlessly transitions to severity tree for Notification type', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Path to Notification: start -> system_temporality -> result_notification
+      // start: option 1 = "No — it happens independently"
+      store.answerQuestion(1)
+      // system_temporality: option 1 = "A specific event or announcement"
+      store.answerQuestion(1)
+
+      // Should now be in severity tree
+      expect(store.currentTreeId.value).toBe('notification-severity')
+      expect(store.currentNodeId.value).toBe('platform')
+      expect(store.isComplete.value).toBe(false)
+    })
+
+    it('completes with severity when finishing severity tree', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Path to Notification
+      store.answerQuestion(1) // No — it happens independently
+      store.answerQuestion(1) // A specific event or announcement
+      // Now in severity tree at 'platform'
+      // Answer: "Yes — complete outage" -> r_critical_outage
+      store.answerQuestion(0)
+
+      expect(store.isComplete.value).toBe(true)
+      expect(store.result.value).not.toBeNull()
+      expect(store.result.value!.informationType).toBe('Notification')
+      expect(store.result.value!.severity).toBe('CRITICAL')
+      expect(store.result.value!.channels.length).toBeGreaterThan(0)
+    })
+
+    it('tracks total path across both trees', () => {
+      const store = useClassificationStore()
+      store.reset()
+      store.answerQuestion(1) // info-type tree Q1
+      store.answerQuestion(1) // info-type tree Q2 -> chains
+      store.answerQuestion(0) // severity tree Q1 -> result
+      // 3 questions total across both trees
+      expect(store.path.value).toHaveLength(3)
+      expect(store.answeredQuestions.value).toBe(3)
+    })
+  })
 })

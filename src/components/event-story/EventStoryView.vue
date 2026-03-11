@@ -1,16 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import StoryDialog from './StoryDialog.vue'
 import StoryPanel from './StoryPanel.vue'
+import StoryQuestion from './StoryQuestion.vue'
 import TextGenerationPanel from './TextGenerationPanel.vue'
 import TextFeedbackChat from './TextFeedbackChat.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
+import { useClassificationStore } from '@/stores/classificationStore'
 import { useTextFeedbackStore } from '@/stores/textFeedbackStore'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
 const { phase } = useEventStoryStore()
+const classificationStore = useClassificationStore()
 const feedbackStore = useTextFeedbackStore()
+
+const currentTreeQuestion = computed(() => classificationStore.getCurrentQuestion())
+
+function handleTreeAnswer(selectedOptions: string[], _freeformText: string) {
+  const first = selectedOptions[0]
+  if (first == null) return
+  const optionIndex = parseInt(first, 10)
+  if (!isNaN(optionIndex)) {
+    classificationStore.answerQuestion(optionIndex)
+  }
+}
 
 function handleNewChat() {
   feedbackStore.clearConversation()
@@ -34,7 +48,50 @@ onUnmounted(() => {
     <!-- Interview + inline analysis (two-column) -->
     <template v-if="phase === 'collect'">
       <div class="event-story-view__main">
-        <StoryDialog />
+        <!-- Classification flow (Phase 1) -->
+        <template v-if="!classificationStore.isComplete.value">
+          <div class="event-story-view__classification">
+            <StoryQuestion
+              v-if="currentTreeQuestion"
+              :key="currentTreeQuestion.id"
+              :question="currentTreeQuestion"
+              @answer="handleTreeAnswer"
+            />
+          </div>
+        </template>
+
+        <!-- Post-classification: show result card -->
+        <template v-else-if="classificationStore.isComplete.value && classificationStore.result.value">
+          <div class="event-story-view__result">
+            <div class="result-card">
+              <h2 class="result-card__title">{{ t('classification.result.title') }}</h2>
+              <div class="result-card__tags">
+                <span class="result-card__type-tag">
+                  {{ classificationStore.result.value.informationType }}
+                </span>
+                <span v-if="classificationStore.result.value.severity" class="result-card__severity-tag">
+                  {{ classificationStore.result.value.severity }}
+                </span>
+              </div>
+              <div v-if="classificationStore.result.value.trigger" class="result-card__section">
+                <span class="result-card__label">{{ t('classification.result.trigger') }}</span>
+                <span>{{ classificationStore.result.value.trigger }}</span>
+              </div>
+              <div v-if="classificationStore.result.value.channels.length > 0" class="result-card__section">
+                <span class="result-card__label">{{ t('classification.result.channels') }}</span>
+                <div class="result-card__channels">
+                  <span v-for="ch in classificationStore.result.value.channels" :key="ch" class="result-card__channel">{{ ch }}</span>
+                </div>
+              </div>
+              <div class="result-card__footer">
+                <span class="result-card__complete">{{ t('classification.result.phase1Complete') }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Existing interview (fallback — shown after classification in Phase 2/3) -->
+        <StoryDialog v-else />
       </div>
       <div class="event-story-view__sidebar">
         <StoryPanel />
@@ -165,6 +222,117 @@ onUnmounted(() => {
 
 .sidebar-card__panel--chat {
   padding: 24px;
+}
+
+/* Classification flow layout */
+.event-story-view__classification {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.event-story-view__result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.result-card {
+  background: var(--telekom-color-background-surface, #fff);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+}
+
+.result-card__title {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--telekom-color-text-and-icon-standard, #000000);
+  margin: 0;
+}
+
+.result-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.result-card__type-tag,
+.result-card__severity-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.result-card__type-tag {
+  background: var(--telekom-color-ui-faint, #dfdfe1);
+  color: var(--telekom-color-text-and-icon-standard, #000000);
+}
+
+.result-card__severity-tag {
+  background: var(--telekom-color-functional-warning-subtle);
+  color: var(--telekom-color-text-and-icon-on-subtle-warning);
+}
+
+.result-card__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+}
+
+.result-card__label {
+  font-weight: 700;
+  color: var(--telekom-color-text-and-icon-standard, #000000);
+}
+
+.result-card__channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.result-card__channel {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: var(--telekom-color-ui-faint, #dfdfe1);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.result-card__footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--telekom-color-ui-faint, #dfdfe1);
+}
+
+.result-card__complete {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--telekom-color-functional-success-standard, #00b367);
 }
 
 @media (max-width: 1024px) {

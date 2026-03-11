@@ -4,8 +4,10 @@ import type { RenderableQuestion } from '@/data/story-questions'
 import RadioTile from './RadioTile.vue'
 import CheckboxTile from './CheckboxTile.vue'
 import ConfirmationTile from './ConfirmationTile.vue'
+import FreeformEscapeHatch from './FreeformEscapeHatch.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 const { t } = useI18n()
 
@@ -22,6 +24,16 @@ const selectedOptions = ref<string[]>([])
 const freeformText = ref('')
 const collapsed = ref(false)
 const showChangeForm = ref(false)
+const escapeHatchOpen = ref(false)
+
+const { state: settingsState } = useSettingsStore()
+const isTreeQuestion = computed(() => props.question.origin === 'tree')
+const hasLLM = computed(() => {
+  return settingsState.provider === 'lmstudio'
+    || settingsState.anthropicApiKey !== ''
+    || settingsState.llmHubApiKey !== ''
+})
+const showEscapeHatch = computed(() => isTreeQuestion.value && hasLLM.value)
 
 // Verification mode
 const isVerification = computed(() => props.question.origin === 'verify' && !showChangeForm.value)
@@ -72,6 +84,12 @@ function handleSubmit() {
   freeformText.value = ''
 }
 
+function handleEscapeHatchSelect(optionIndex: number) {
+  selectSingle(String(optionIndex))
+  escapeHatchOpen.value = false
+  nextTick(() => handleSubmit())
+}
+
 // ---------------------------------------------------------------------------
 // Hotkey support (1–4 for option selection)
 // ---------------------------------------------------------------------------
@@ -103,6 +121,7 @@ function handleKeydown(event: KeyboardEvent) {
 // Reset change form state when question changes
 watch(() => props.question.id, () => {
   showChangeForm.value = false
+  escapeHatchOpen.value = false
   selectedOptions.value = []
   freeformText.value = ''
 })
@@ -257,6 +276,24 @@ function onAfterLeave(el: Element) {
             </template>
           </div>
 
+          <!-- Escape hatch trigger (tree questions only) -->
+          <template v-if="showEscapeHatch">
+            <button
+              v-if="!escapeHatchOpen"
+              class="input-panel__escape-trigger"
+              @click="escapeHatchOpen = true"
+            >
+              {{ t('classification.escapeHatch.trigger') }}
+            </button>
+            <FreeformEscapeHatch
+              v-if="escapeHatchOpen"
+              :question="question"
+              :visible="escapeHatchOpen"
+              @select-option="handleEscapeHatchSelect"
+              @close="escapeHatchOpen = false"
+            />
+          </template>
+
           <!-- Freeform textarea -->
           <div v-if="question.allowFreeform" class="input-panel__textarea">
             <scale-textarea
@@ -370,5 +407,21 @@ function onAfterLeave(el: Element) {
   display: flex;
   justify-content: flex-end;
   gap: 16px;
+}
+
+.input-panel__escape-trigger {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+  color: var(--telekom-color-text-and-icon-link, #00739f);
+  cursor: pointer;
+  text-decoration: underline;
+  text-align: left;
+}
+
+.input-panel__escape-trigger:hover {
+  color: var(--telekom-color-text-and-icon-link-hovered, #005a7e);
 }
 </style>

@@ -21,6 +21,7 @@ import {
   type StoryQuestionDef,
 } from '@/data/story-questions'
 import { analyzeConversation, analyzeText, type ConversationEntry } from '@/services/llm/storyExtractor'
+import { useClassificationStore } from '@/stores/classificationStore'
 import { t } from '@/i18n'
 
 import {
@@ -153,6 +154,10 @@ function buildVerificationQuestion(item: StoryChecklistItem, answersHistory: Ans
 // ---------------------------------------------------------------------------
 
 export function useEventStoryStore() {
+  // Classification tree store
+  const classificationStore = useClassificationStore()
+  const classificationResult = computed(() => classificationStore.result.value)
+
   // Derived computeds
   const classification = computed<StoryClassification | null>(() => {
     return deriveClassification(checklist.value)
@@ -560,6 +565,7 @@ export function useEventStoryStore() {
     currentQuestion,
     interviewComplete,
     classification,
+    classificationResult,
     composedStory,
     channelQuality,
     checklistProgress,

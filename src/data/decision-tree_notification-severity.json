@@ -39,7 +39,8 @@
       "description": "Estimate the scope — a broad group or a specific few?",
       "options": [
         { "label": "Many users", "description": "A significant portion of the user base", "next": "r_high_blocked_many" },
-        { "label": "A few users", "description": "Limited to specific users or teams", "next": "r_medium_blocked_few" }
+        { "label": "A few users", "description": "A specific team, group, or small number of users", "next": "r_medium_blocked_few" },
+        { "label": "One user", "description": "Only a single individual user is affected", "next": "r_low_blocked_one" }
       ]
     },
     "degraded_scope": {
@@ -48,7 +49,8 @@
       "description": "Estimate the scope — a broad group or a specific few?",
       "options": [
         { "label": "Many users", "description": "A significant portion of the user base", "next": "r_high_degraded_many" },
-        { "label": "A few users", "description": "Limited to specific users or teams", "next": "r_medium_degraded_few" }
+        { "label": "A few users", "description": "A specific team, group, or small number of users", "next": "r_medium_degraded_few" },
+        { "label": "One user", "description": "Only a single individual user is affected", "next": "r_low_degraded_one" }
       ]
     },
     "action": {
@@ -61,13 +63,15 @@
       ]
     },
 
-    "r_critical_outage":     { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Complete platform outage" },
-    "r_critical_security":   { "type": "result", "severity": "CRITICAL", "channels": ["Banner (persistent, must acknowledge)", "Dashboard", "Email (High Importance)"], "trigger": "Security/compliance issue" },
-    "r_high_blocked_many":   { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Blocking — many users" },
-    "r_high_degraded_many":  { "type": "result", "severity": "HIGH",     "channels": ["Banner (persistent, dismissible)", "Dashboard", "Email (High Importance)"], "trigger": "Degraded — many users" },
-    "r_medium_blocked_few":  { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Blocking — few users" },
-    "r_medium_degraded_few": { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Degraded — few users" },
-    "r_medium_action":       { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "Email (Normal)"], "trigger": "Non-blocking, action needed" },
+    "r_critical_outage":     { "type": "result", "severity": "CRITICAL", "channels": ["Banner", "Dashboard", "E-Mail", "Status Page"], "trigger": "Complete platform outage" },
+    "r_critical_security":   { "type": "result", "severity": "CRITICAL", "channels": ["Banner", "Dashboard", "E-Mail", "Status Page"], "trigger": "Security/compliance issue" },
+    "r_high_blocked_many":   { "type": "result", "severity": "HIGH",     "channels": ["Banner", "Dashboard", "E-Mail"], "trigger": "Blocking — many users" },
+    "r_high_degraded_many":  { "type": "result", "severity": "HIGH",     "channels": ["Banner", "Dashboard", "E-Mail"], "trigger": "Degraded — many users" },
+    "r_medium_blocked_few":  { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "E-Mail"], "trigger": "Blocking — few users" },
+    "r_medium_degraded_few": { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "E-Mail"], "trigger": "Degraded — few users" },
+    "r_low_blocked_one":     { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Blocking — one user" },
+    "r_low_degraded_one":    { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Degraded — one user" },
+    "r_medium_action":       { "type": "result", "severity": "MEDIUM",   "channels": ["Dashboard", "E-Mail"], "trigger": "Non-blocking, action needed" },
     "r_low_info":            { "type": "result", "severity": "LOW",      "channels": ["Dashboard"], "trigger": "Informational only" }
   }
 }

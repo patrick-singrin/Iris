@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { StoryClassification, StoryChecklistItem } from '@/data/story-questions'
-import ConfidenceBar from './ConfidenceBar.vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -53,45 +52,40 @@ const severityLabel = computed(() => {
 
 <template>
   <div class="tile-classification">
-    <div class="tile-classification__top">
-      <!-- Header: title + type + severity -->
-      <div class="tile-classification__header">
-        <span class="tile-classification__title">{{ t('story.classificationTitle') }}</span>
-        <div class="tile-classification__tags">
-          <span
-            class="tile-classification__tag"
-            :style="{ background: typeTagStyle.bg, color: typeTagStyle.text }"
-          >
-            {{ classification?.type || t('story.notEnoughData') }}
-          </span>
-          <span
-            v-if="severityTagStyle"
-            class="tile-classification__tag"
-            :style="{ background: severityTagStyle.bg, color: severityTagStyle.text }"
-          >
-            {{ severityLabel }}
-          </span>
-        </div>
+    <!-- Title + type tag + severity -->
+    <div class="tile-classification__header">
+      <span class="tile-classification__title">{{ t('story.classificationTitle') }}</span>
+      <div class="tile-classification__tags">
+        <span
+          class="tile-classification__tag"
+          :style="{ background: typeTagStyle.bg, color: typeTagStyle.text }"
+        >
+          {{ classification?.type || t('story.notEnoughData') }}
+        </span>
+        <span
+          v-if="severityTagStyle"
+          class="tile-classification__tag"
+          :style="{ background: severityTagStyle.bg, color: severityTagStyle.text }"
+        >
+          {{ severityLabel }}
+        </span>
       </div>
-
-      <!-- Confidence Bar -->
-      <ConfidenceBar :confidence="classification?.confidence ?? 0" />
     </div>
 
     <!-- Channels -->
-    <div class="tile-classification__channels">
-      <span class="tile-classification__channels-label">{{ t('story.channels') }}</span>
-      <div v-if="classification && classification.channels.length > 0" class="tile-classification__channel-tags">
-        <span
-          v-for="ch in classification.channels"
-          :key="ch"
-          class="tile-classification__channel-tag"
-        >
-          {{ ch }}
-        </span>
-      </div>
-      <div v-else class="tile-classification__channel-tags">
-        <span class="tile-classification__channel-tag tile-classification__channel-tag--empty">
+    <div class="tile-classification__section">
+      <span class="tile-classification__section-label">{{ t('story.channels') }}</span>
+      <div class="tile-classification__section-tags">
+        <template v-if="classification && classification.channels.length > 0">
+          <span
+            v-for="ch in classification.channels"
+            :key="ch"
+            class="tile-classification__section-tag"
+          >
+            {{ ch }}
+          </span>
+        </template>
+        <span v-else class="tile-classification__section-tag tile-classification__section-tag--empty">
           {{ t('story.notEnoughData') }}
         </span>
       </div>
@@ -110,12 +104,6 @@ const severityLabel = computed(() => {
   gap: 16px;
 }
 
-.tile-classification__top {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .tile-classification__header {
   display: flex;
   flex-direction: column;
@@ -127,7 +115,7 @@ const severityLabel = computed(() => {
   font-size: 14px;
   font-weight: 700;
   color: var(--telekom-color-text-and-icon-standard, #000000);
-  line-height: 19.6px;
+  line-height: 20px;
 }
 
 .tile-classification__tags {
@@ -145,32 +133,32 @@ const severityLabel = computed(() => {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.14px;
-  line-height: 17.5px;
+  line-height: 18px;
   white-space: nowrap;
 }
 
-/* Channels */
-.tile-classification__channels {
+.tile-classification__section {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
-.tile-classification__channels-label {
+.tile-classification__section-label {
   font-family: 'TeleNeo', sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: var(--telekom-color-text-and-icon-standard, #000000);
-  line-height: 19.6px;
+  line-height: 20px;
 }
 
-.tile-classification__channel-tags {
+.tile-classification__section-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
 
-.tile-classification__channel-tag {
+.tile-classification__section-tag {
   display: inline-flex;
   align-items: center;
   padding: 2px 4px;
@@ -183,7 +171,7 @@ const severityLabel = computed(() => {
   line-height: 16px;
 }
 
-.tile-classification__channel-tag--empty {
+.tile-classification__section-tag--empty {
   color: rgba(0, 0, 0, 0.65);
 }
 </style>

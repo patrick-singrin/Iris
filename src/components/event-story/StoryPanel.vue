@@ -17,23 +17,6 @@ const classificationStore = useClassificationStore()
 
 const isClassifying = computed(() => !classificationStore.isComplete.value)
 
-// Narrative text for the textarea during classification
-const classificationNarrative = computed(() => {
-  const n = classificationStore.narrative4W.value
-  const lines: string[] = []
-  if (n.who) lines.push(`${t('classification.narrative.who')}: ${n.who}`)
-  if (n.what) lines.push(`${t('classification.narrative.what')}: ${n.what}`)
-  lines.push(`${t('classification.narrative.when')}: ${n.when}`)
-  if (n.whatToDo) lines.push(`${t('classification.narrative.whatToDo')}: ${n.whatToDo}`)
-  return lines.join('\n')
-})
-
-// Classification result mapped for ClassificationTile
-const treeClassification = computed(() => {
-  if (!classificationStore.result.value) return null
-  return classificationStore.toStoryClassification(classificationStore.result.value)
-})
-
 const {
   storyText,
   checklist,
@@ -81,6 +64,19 @@ const draftText = ref(storyText.value)
 let userHasEdited = false
 
 const isDirty = computed(() => draftText.value !== storyText.value)
+
+// Seed the event story text with the classification narrative when Phase 1 completes.
+// This preserves the progressive W-heading narrative the user built during classification
+// as the starting point for the editable narrative in Phase 2.
+watch(isClassifying, (classifying, wasClassifying) => {
+  if (wasClassifying && !classifying && !storyText.value) {
+    const narrative = classificationStore.narrativeText.value
+    if (narrative) {
+      storyText.value = narrative
+      draftText.value = narrative
+    }
+  }
+})
 
 // Guard: Stencil's async re-render after a property change can cause the internal
 // <textarea> to steal focus. Instead of a boolean flag + setTimeout hack, we detect
@@ -135,7 +131,7 @@ function handleApply() {
 
         <scale-textarea
           ref="textareaRef"
-          :value="isClassifying ? classificationNarrative : draftText"
+          :value="isClassifying ? classificationStore.narrativeText.value : draftText"
           :label="t('story.narrativeLabel')"
           :placeholder="t('story.narrativePlaceholder')"
           rows="10"
@@ -154,6 +150,7 @@ function handleApply() {
           :current="classificationStore.answeredQuestions.value"
           :total="classificationStore.totalQuestions.value"
           :complete="classificationStore.isComplete.value"
+          :step-label="classificationStore.currentStepLabel.value"
         />
         <ProgressBar
           v-else
@@ -164,8 +161,10 @@ function handleApply() {
       </div>
 
       <!-- Section 2: Classification Tile -->
+      <!-- After classification (Phase 1) completes, the checklist-derived classification
+           is still null because LLM extraction hasn't run yet. Fall back to the tree result. -->
       <ClassificationTile
-        :classification="isClassifying ? treeClassification : classification"
+        :classification="isClassifying ? classificationStore.progressiveClassification.value : (classification || classificationStore.progressiveClassification.value)"
         :checklist="checklist"
       />
 

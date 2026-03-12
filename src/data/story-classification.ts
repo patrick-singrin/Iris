@@ -172,6 +172,157 @@ export function composeStory(checklist: StoryChecklistItem[]): string {
 }
 
 // ---------------------------------------------------------------------------
+// Phase 1 Classification — from metadata (Decision #22–#27)
+// ---------------------------------------------------------------------------
+
+import type { Phase1Metadata } from './classification-questions'
+
+export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+
+export interface Phase1ClassificationResult {
+  informationType: string
+  severity: Severity | null
+  channels: string[]
+  trigger: string
+}
+
+/** Channel mapping by severity tier (architecture-evolution.md §3) */
+const SEVERITY_CHANNELS: Record<Severity, string[]> = {
+  CRITICAL: ['Banner', 'Dashboard', 'E-Mail', 'Status Page'],
+  HIGH: ['Banner', 'Dashboard', 'E-Mail'],
+  MEDIUM: ['Dashboard', 'E-Mail'],
+  LOW: ['Dashboard'],
+}
+
+/**
+ * Derive severity from Phase 1 metadata (Decision #24).
+ *
+ * - Security or compliance → CRITICAL
+ * - Entire platform down → CRITICAL
+ * - Core value + any breakage → HIGH
+ * - Capability + any breakage → MEDIUM
+ * - Nothing broken (scope = none) → LOW
+ */
+function deriveSeverityFromMetadata(m: Phase1Metadata): Severity {
+  if (m.security) return 'CRITICAL'
+  if (m.platform_down) return 'CRITICAL'
+  if (m.category === 'core_value' && m.scope !== 'none') return 'HIGH'
+  if (m.category === 'capability' && m.scope !== 'none') return 'MEDIUM'
+  return 'LOW'
+}
+
+/**
+ * Derive channels from severity + scope (architecture-audit.md §2 scope qualifier).
+ *
+ * HIGH + scope = one → drop Banner (single-service, single-user issue
+ * doesn't warrant the most intrusive channel).
+ */
+function deriveChannels(severity: Severity, m: Phase1Metadata): string[] {
+  const channels = [...SEVERITY_CHANNELS[severity]]
+  if (severity === 'HIGH' && m.scope === 'one') {
+    return channels.filter(c => c !== 'Banner')
+  }
+  return channels
+}
+
+/**
+ * Classify Management events into one of the 6 information types.
+ * Mirrors the old decision-tree_information-type.json Management branch logic.
+ */
+function classifyManagement(m: Phase1Metadata): Phase1ClassificationResult {
+  if (m.mgmt_form_field) {
+    return {
+      informationType: 'Validation Messages',
+      severity: null,
+      channels: ['Inline'],
+      trigger: 'Form field validation',
+    }
+  }
+
+  if (m.mgmt_trigger === 'user') {
+    if (m.mgmt_success === false) {
+      return {
+        informationType: 'Error & Warnings',
+        severity: null,
+        channels: ['Inline', 'Toast'],
+        trigger: 'User action failed',
+      }
+    }
+    // success = true
+    if (m.mgmt_persistence) {
+      return {
+        informationType: 'Transactional Confirmation',
+        severity: null,
+        channels: ['Toast', 'Dashboard'],
+        trigger: 'User action completed — record needed',
+      }
+    }
+    return {
+      informationType: 'Feedback',
+      severity: null,
+      channels: ['Toast'],
+      trigger: 'User action completed',
+    }
+  }
+
+  if (m.mgmt_trigger === 'system') {
+    if (m.mgmt_ongoing) {
+      return {
+        informationType: 'Status Display',
+        severity: null,
+        channels: ['Dashboard'],
+        trigger: 'Ongoing system status',
+      }
+    }
+    return {
+      informationType: 'Notification',
+      severity: 'LOW',
+      channels: ['Dashboard'],
+      trigger: 'System event in management interface',
+    }
+  }
+
+  // Fallback — should not normally be reached
+  return {
+    informationType: 'Notification',
+    severity: 'LOW',
+    channels: ['Dashboard'],
+    trigger: 'Management event',
+  }
+}
+
+/**
+ * Pure deterministic classification from Phase 1 metadata.
+ * No LLM, no store access — just rules (Decision #22, #25).
+ *
+ * - Management → type classification (6 information types)
+ * - Core value / Capability → Notification with severity
+ */
+export function classifyFromMetadata(m: Phase1Metadata): Phase1ClassificationResult {
+  if (m.category === 'management') {
+    return classifyManagement(m)
+  }
+
+  // Core value or Capability → always Notification type
+  const severity = deriveSeverityFromMetadata(m)
+  const channels = deriveChannels(severity, m)
+
+  const scopeLabel = m.scope === 'all' ? 'all services'
+    : m.scope === 'some' ? 'some services'
+    : m.scope === 'one' ? 'a single service'
+    : 'informational'
+
+  const categoryLabel = m.category === 'core_value' ? 'Core product' : 'Platform feature'
+
+  return {
+    informationType: 'Notification',
+    severity,
+    channels,
+    trigger: `${categoryLabel} — ${scopeLabel}`,
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Channel Quality Assessment
 // ---------------------------------------------------------------------------
 

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import ClassificationTile from './ClassificationTile.vue'
-import ClassificationProgress from './ClassificationProgress.vue'
 import ReasoningTile from './ReasoningTile.vue'
 import ProgressBar from './ProgressBar.vue'
-import ModelSelector from './ModelSelector.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
 import { useClassificationStore } from '@/stores/classificationStore'
@@ -58,6 +56,7 @@ function hideTooltip() {
 }
 
 const textareaRef = ref<HTMLElement | null>(null)
+
 const draftText = ref(storyText.value)
 // Track whether the user has manually typed in the textarea.
 // Prevents programmatic storyText updates from being blocked by the isDirty guard.
@@ -119,24 +118,17 @@ function handleApply() {
 <template>
   <div class="story-panel">
     <div class="story-panel__card">
-      <!-- Model selector (top, hidden during classification) -->
-      <ModelSelector v-if="!isClassifying" />
-
       <!-- Section 1: Event Narrative -->
       <div class="story-panel__section">
         <h3 class="story-panel__title">{{ t('story.narrativeTitle') }}</h3>
-        <p class="story-panel__subtitle">
-          {{ t('story.narrativeSubtitle') }}
-        </p>
 
         <scale-textarea
           ref="textareaRef"
           :value="isClassifying ? classificationStore.narrativeText.value : draftText"
           :label="t('story.narrativeLabel')"
           :placeholder="t('story.narrativePlaceholder')"
-          rows="10"
-          resize="vertical"
           :readonly="isReadOnly || isClassifying"
+          resize="none"
           @scaleChange="handleStoryInput"
         />
 
@@ -145,15 +137,8 @@ function handleApply() {
           <scale-button size="small" @click="handleApply">{{ t('story.applyChanges') }}</scale-button>
         </div>
 
-        <ClassificationProgress
-          v-if="isClassifying"
-          :current="classificationStore.answeredQuestions.value"
-          :total="classificationStore.totalQuestions.value"
-          :complete="classificationStore.isComplete.value"
-          :step-label="classificationStore.currentStepLabel.value"
-        />
         <ProgressBar
-          v-else
+          v-if="!isClassifying"
           :verified="checklistProgress.verified"
           :unverified="checklistProgress.unverified"
           :total="checklist.length"
@@ -168,37 +153,38 @@ function handleApply() {
         :checklist="checklist"
       />
 
-      <!-- Section 3: Product Context + Reasoning (hidden during classification) -->
-      <div v-if="!isClassifying" class="story-panel__bottom">
-        <div class="product-context-row">
-          <scale-switch
-            :checked="pcState.enabled"
-            :disabled="!hasProductContent"
-            :label="t('story.productContext')"
-            size="small"
-            @scaleChange="handleProductContextToggle"
-          />
-          <span
-            ref="infoIconRef"
-            class="product-context-info"
-            tabindex="0"
-            role="button"
-            :aria-label="t('productContext.tooltip')"
-            aria-describedby="pc-tooltip"
-            @mouseenter="showTooltip"
-            @mouseleave="hideTooltip"
-            @focus="showTooltip"
-            @blur="hideTooltip"
-          >
-            <AppIcon name="info" :size="12" />
-          </span>
-        </div>
-        <ReasoningTile
-          :checklist="checklist"
-          :expanded="showWhyExplainer"
-          @toggle="toggleWhyExplainer"
+      <!-- Section 3: Product Context (always visible) -->
+      <div class="product-context-row">
+        <scale-switch
+          :checked="pcState.enabled"
+          :disabled="!hasProductContent"
+          :label="t('story.productContext')"
+          size="small"
+          @scaleChange="handleProductContextToggle"
         />
+        <span
+          ref="infoIconRef"
+          class="product-context-info"
+          tabindex="0"
+          role="button"
+          :aria-label="t('productContext.tooltip')"
+          aria-describedby="pc-tooltip"
+          @mouseenter="showTooltip"
+          @mouseleave="hideTooltip"
+          @focus="showTooltip"
+          @blur="hideTooltip"
+        >
+          <AppIcon name="info" :size="12" />
+        </span>
       </div>
+
+      <!-- Section 4: Reasoning (hidden during classification) -->
+      <ReasoningTile
+        v-if="!isClassifying"
+        :checklist="checklist"
+        :expanded="showWhyExplainer"
+        @toggle="toggleWhyExplainer"
+      />
     </div>
   </div>
 
@@ -236,14 +222,25 @@ function handleApply() {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.story-panel__card > * {
+/* Prevent non-narrative sections from shrinking, but allow the
+   narrative section (.story-panel__section) to grow into remaining space. */
+.story-panel__card > *:not(.story-panel__section) {
   flex-shrink: 0;
 }
 
 .story-panel__section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.story-panel__section scale-textarea {
+  flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
 .story-panel__title {
@@ -255,14 +252,6 @@ function handleApply() {
   margin: 0;
 }
 
-.story-panel__subtitle {
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
-  line-height: 19.6px;
-  margin: 0 0 8px;
-}
 
 .story-panel__actions {
   display: flex;
@@ -275,12 +264,6 @@ function handleApply() {
 
 .story-panel__actions scale-button::part(base) {
   width: 100%;
-}
-
-.story-panel__bottom {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 
 .product-context-row {
@@ -302,6 +285,23 @@ function handleApply() {
 </style>
 
 <style>
+/* Override Stencil's scoped-CSS selectors (which add data-attribute specificity)
+   to make the textarea internals fill their flex-allocated height.
+   !important is needed because Stencil's `.textarea[sc-scale-textarea]` beats
+   our plain `.textarea` in specificity. */
+.story-panel__section scale-textarea .textarea {
+  flex: 1 !important;
+}
+
+.story-panel__section scale-textarea .textarea__wrapper {
+  flex: 1 !important;
+}
+
+.story-panel__section scale-textarea .textarea__wrapper .textarea__control {
+  flex: 1 !important;
+  resize: none !important;
+}
+
 .product-context-tooltip {
   position: fixed;
   width: 260px;

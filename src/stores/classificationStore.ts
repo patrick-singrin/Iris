@@ -1,16 +1,28 @@
 /**
- * Classification Store — deterministic decision-tree walker.
+ * Classification Store — flat sequential question flow for Phase 1.
  *
- * Walks two chained JSON trees (information-type -> notification-severity)
- * to classify events without LLM. State: current tree/node, path history,
- * final result, and progressive 4W narrative.
+ * Replaces the tree-walking composable (v1) with a simple metadata collector
+ * that walks a flat array of conditional questions. Deterministic rules
+ * derive Information Type, Severity, and Channels from the collected metadata.
+ *
+ * Public API is compatible with the previous tree-walker version so that
+ * EventStoryView, StoryPanel, and StoryQuestion require no changes.
+ *
+ * See Decision #22–#27 and docs/architecture-evolution.md.
  */
 
 import { ref, computed } from 'vue'
-import type { PathEntry, QuestionNode, ResultNode, TreeNode } from '@/types/decisionTree'
-import { isQuestionNode, isResultNode } from '@/types/decisionTree'
-import { loadTree, getNode, hasContinuation } from '@/services/decisionTree'
+import {
+  type PathEntry,
+  type Phase1Metadata,
+  type ClassificationQuestionDef,
+  createEmptyMetadata,
+  getClassificationQuestions,
+  findNextQuestion,
+  countRemainingQuestions,
+} from '@/data/classification-questions'
 import { buildProgressiveNarrative } from '@/services/classificationNarrativeBuilder'
+import { classifyFromMetadata } from '@/data/story-classification'
 import type { RenderableQuestion } from '@/data/story-questions'
 import type { StoryClassification } from '@/data/story-classification'
 
@@ -26,27 +38,15 @@ export interface ClassificationResult {
   path: PathEntry[]
 }
 
-
 // ---------------------------------------------------------------------------
 // Module-level state
 // ---------------------------------------------------------------------------
 
-const INITIAL_TREE = 'information-type'
-
-const currentTreeId = ref(INITIAL_TREE)
-const currentNodeId = ref('')
+const metadata = ref<Phase1Metadata>(createEmptyMetadata())
+const currentQuestionIndex = ref(0)
 const path = ref<PathEntry[]>([])
 const result = ref<ClassificationResult | null>(null)
 const isComplete = ref(false)
-// Captured when chaining: the intermediate result's classification (e.g. "Notification")
-const pendingClassification = ref<string | null>(null)
-
-// Initialize entry node
-function initEntry() {
-  const tree = loadTree(INITIAL_TREE)
-  currentNodeId.value = tree.entryNode
-}
-initEntry()
 
 // ---------------------------------------------------------------------------
 // Computed
@@ -54,44 +54,14 @@ initEntry()
 
 const answeredQuestions = computed(() => path.value.length)
 
-/** Human-readable label for current progress step (e.g. "Event Trigger"). */
-const currentStepLabel = computed(() => {
-  const tree = loadTree(currentTreeId.value)
-  return tree.name || currentTreeId.value
-})
+const currentStepLabel = computed(() => 'Classification')
 
 const totalQuestions = computed(() => {
   if (isComplete.value) return answeredQuestions.value
-  const tree = loadTree(currentTreeId.value)
-  const remaining = maxDepth(tree.nodes, currentNodeId.value, currentTreeId.value)
+  const questions = getClassificationQuestions()
+  const remaining = countRemainingQuestions(questions, metadata.value, currentQuestionIndex.value)
   return answeredQuestions.value + remaining
 })
-
-/** Recursive max-depth from a node to any leaf (counting question nodes only). */
-function maxDepth(
-  nodes: Record<string, TreeNode>,
-  nodeId: string,
-  treeId: string,
-): number {
-  const node = nodes[nodeId]
-  if (!node) return 0
-  if (isResultNode(node)) {
-    // If result has continueWith, count depth into next tree
-    if (hasContinuation(node)) {
-      const nextTree = loadTree(node.continueWith!.treeId)
-      return maxDepth(nextTree.nodes, nextTree.entryNode, node.continueWith!.treeId)
-    }
-    return 0
-  }
-  // Question node — 1 + max of all children
-  const qNode = node as QuestionNode
-  let max = 0
-  for (const opt of qNode.options) {
-    const childDepth = maxDepth(nodes, opt.next, treeId)
-    if (childDepth > max) max = childDepth
-  }
-  return 1 + max
-}
 
 /** Progressive W-heading narrative built from all classification answers. */
 const narrativeText = computed(() =>
@@ -103,51 +73,41 @@ const narrativeText = computed(() =>
 // ---------------------------------------------------------------------------
 
 function answerQuestion(optionIndex: number) {
-  const tree = loadTree(currentTreeId.value)
-  const node = getNode(tree, currentNodeId.value)
+  const questions = getClassificationQuestions()
+  const found = findNextQuestion(questions, metadata.value, currentQuestionIndex.value)
+  if (!found) return
 
-  if (!isQuestionNode(node)) return
-
-  const qNode = node as QuestionNode
-  const option = qNode.options[optionIndex]
+  const { question, index } = found
+  const option = question.options[optionIndex]
   if (!option) return
 
-  // Record path entry
+  // Apply answer to metadata
+  question.applyAnswer(metadata.value, option.value)
+
+  // Record path entry for history + narrative
   path.value.push({
-    nodeId: currentNodeId.value,
-    questionText: qNode.text,
+    nodeId: question.id,
+    questionText: question.text,
     selectedLabel: option.label,
   })
 
-  // Advance to the next node
-  const nextId = option.next
-  const nextNode = getNode(tree, nextId)
+  // Advance past this question
+  currentQuestionIndex.value = index + 1
 
-  if (isResultNode(nextNode)) {
-    const resultNode = nextNode as ResultNode
-    if (hasContinuation(resultNode)) {
-      // Capture intermediate classification before transitioning (e.g. "Notification")
-      pendingClassification.value = resultNode.classification || null
-      // Seamless transition to next tree
-      const nextTreeId = resultNode.continueWith!.treeId
-      const nextTree = loadTree(nextTreeId)
-      currentTreeId.value = nextTreeId
-      currentNodeId.value = nextTree.entryNode
-    } else {
-      // Final result — no continuation
-      buildResult(resultNode)
-    }
-  } else {
-    currentNodeId.value = nextId
+  // Check if there are more visible questions
+  const next = findNextQuestion(questions, metadata.value, currentQuestionIndex.value)
+  if (!next) {
+    buildResult()
   }
 }
 
-function buildResult(node: ResultNode) {
+function buildResult() {
+  const classification = classifyFromMetadata(metadata.value)
   result.value = {
-    informationType: pendingClassification.value || node.classification || 'Unknown',
-    severity: node.severity || null,
-    channels: node.channels || [],
-    trigger: node.trigger || '',
+    informationType: classification.informationType,
+    severity: classification.severity,
+    channels: classification.channels,
+    trigger: classification.trigger,
     path: [...path.value],
   }
   isComplete.value = true
@@ -155,19 +115,19 @@ function buildResult(node: ResultNode) {
 
 function getCurrentQuestion(): RenderableQuestion | null {
   if (isComplete.value) return null
-  const tree = loadTree(currentTreeId.value)
-  const node = getNode(tree, currentNodeId.value)
-  if (!isQuestionNode(node)) return null
-  return treeNodeToRenderable(node as QuestionNode, currentNodeId.value)
+  const questions = getClassificationQuestions()
+  const found = findNextQuestion(questions, metadata.value, currentQuestionIndex.value)
+  if (!found) return null
+  return questionDefToRenderable(found.question)
 }
 
-function treeNodeToRenderable(node: QuestionNode, nodeId: string): RenderableQuestion {
+function questionDefToRenderable(def: ClassificationQuestionDef): RenderableQuestion {
   return {
-    id: nodeId,
-    text: node.text,
-    helpText: node.description,
+    id: def.id,
+    text: def.text,
+    helpText: def.helpText,
     inputType: 'single',
-    options: node.options.map((opt, idx) => ({
+    options: def.options.map((opt, idx) => ({
       value: String(idx),
       label: opt.label,
       description: opt.description,
@@ -178,7 +138,7 @@ function treeNodeToRenderable(node: QuestionNode, nodeId: string): RenderableQue
   }
 }
 
-/** Map tree result to existing StoryClassification shape for ClassificationTile. */
+/** Map classification result to StoryClassification shape for ClassificationTile. */
 function toStoryClassification(res: ClassificationResult): StoryClassification {
   return {
     type: res.informationType,
@@ -190,8 +150,11 @@ function toStoryClassification(res: ClassificationResult): StoryClassification {
 
 /**
  * Progressive classification that updates live as the user answers questions.
- * Shows type as soon as the first tree completes (via pendingClassification),
- * and full result once classification is done.
+ *
+ * Shows partial results based on what metadata has been collected so far:
+ * - After Q1 (category): show predicted type
+ * - After severity-relevant questions: show predicted severity + channels
+ * - Final: full result
  */
 const progressiveClassification = computed<StoryClassification | null>(() => {
   // Final result takes precedence
@@ -199,27 +162,52 @@ const progressiveClassification = computed<StoryClassification | null>(() => {
     return toStoryClassification(result.value)
   }
 
-  // During severity tree, we know the type from the intermediate result
-  if (pendingClassification.value) {
+  // Need at least category to show anything
+  if (!metadata.value.category) return null
+
+  // For management, show type prediction as soon as we can
+  if (metadata.value.category === 'management') {
+    // After form field check, we can predict Validation Messages
+    if (metadata.value.mgmt_form_field === true) {
+      return { type: 'Validation Messages', severity: null, channels: ['Inline'], confidence: 0.8 }
+    }
+    // Otherwise just show "Management event" pending
+    return { type: 'Management event', severity: null, channels: [], confidence: 0.3 }
+  }
+
+  // Core value / Capability → we know it's a Notification
+  const type = 'Notification'
+
+  // Can we derive severity yet? Need security + (platform_down if core_value) + scope
+  const m = metadata.value
+  const hasSeverityData = m.security !== null && m.scope !== null
+    && (m.category !== 'core_value' || m.platform_down !== null)
+
+  if (hasSeverityData) {
+    const classification = classifyFromMetadata(m)
     return {
-      type: pendingClassification.value,
-      severity: null,
-      channels: [],
-      confidence: 0.5,
+      type,
+      severity: classification.severity,
+      channels: classification.channels,
+      confidence: 0.8,
     }
   }
 
-  return null
+  // Security known but not scope yet → can show CRITICAL if security
+  if (m.security === true) {
+    return { type, severity: 'CRITICAL', channels: ['Banner', 'Dashboard', 'E-Mail', 'Status Page'], confidence: 0.7 }
+  }
+
+  // Just category known
+  return { type, severity: null, channels: [], confidence: 0.3 }
 })
 
 function reset() {
-  currentTreeId.value = INITIAL_TREE
-  const tree = loadTree(INITIAL_TREE)
-  currentNodeId.value = tree.entryNode
+  metadata.value = createEmptyMetadata()
+  currentQuestionIndex.value = 0
   path.value = []
   result.value = null
   isComplete.value = false
-  pendingClassification.value = null
 }
 
 // ---------------------------------------------------------------------------
@@ -229,8 +217,7 @@ function reset() {
 export function useClassificationStore() {
   return {
     // State
-    currentTreeId,
-    currentNodeId,
+    metadata,
     path,
     result,
     isComplete,

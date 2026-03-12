@@ -131,7 +131,7 @@ const severityLabel = computed(() => {
   border-radius: 4px;
   font-family: 'TeleNeo', sans-serif;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 655; /* TeleNeo Var "Bold" axis value — matches Figma */
   letter-spacing: -0.14px;
   line-height: 18px;
   white-space: nowrap;
@@ -166,7 +166,7 @@ const severityLabel = computed(() => {
   background: var(--telekom-color-ui-faint, #dfdfe1);
   font-family: 'TeleNeo', sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 655; /* TeleNeo Var "Bold" axis value — matches Figma */
   color: var(--telekom-color-text-and-icon-standard, #000000);
   line-height: 16px;
 }

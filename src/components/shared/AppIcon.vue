@@ -31,6 +31,7 @@ export type IconName =
   | 'chat-bubble'
   | 'question-box'
   | 'send'
+  | 'sparkle'
 </script>
 
 <template>
@@ -168,6 +169,12 @@ export type IconName =
       stroke-linecap="round"
       stroke-linejoin="round"
     />
+
+    <!-- Sparkle / AI icon -->
+    <template v-else-if="name === 'sparkle'">
+      <path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1z" stroke="currentColor" :stroke-width="strokeWidth" stroke-linejoin="round" fill="none" />
+      <path d="M12.5 1l.5 1.5L14.5 3l-1.5.5L12.5 5l-.5-1.5L10.5 3l1.5-.5L12.5 1z" stroke="currentColor" stroke-width="1" stroke-linejoin="round" fill="currentColor" />
+    </template>
   </svg>
 </template>
 

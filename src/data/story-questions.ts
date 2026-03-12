@@ -123,6 +123,8 @@ export interface RenderableQuestion {
   id: string
   text: string
   helpText?: string
+  helpExamples?: Array<{ scenario: string; answer: string; reason: string }>
+  tiebreaker?: string
   inputType: 'single' | 'multiple' | 'freeform'
   options: StoryQuestionOption[]
   allowFreeform: boolean
@@ -360,11 +362,6 @@ export function getStoryQuestions(): StoryQuestionDef[] {
     },
   ]
 }
-
-/**
- * @deprecated Use getStoryQuestions() instead — kept for backward compatibility during migration.
- */
-export const storyQuestions: StoryQuestionDef[] = getStoryQuestions()
 
 // Re-export classification, composition, and channel quality from their new home
 export {

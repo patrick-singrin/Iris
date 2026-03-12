@@ -68,7 +68,7 @@ export const en = {
   'story.interviewComplete': 'All details collected',
   'story.interviewCompleteHint': 'Review your event story and generate channel copy.',
   'story.proceedToReview': 'Proceed to Review',
-  'story.narrativeTitle': 'Event Narrative',
+  'story.narrativeTitle': 'Event Summary',
   'story.narrativeSubtitle': 'This narrative builds as you answer questions. You can edit it freely.',
   'story.narrativeLabel': 'Your Event',
   'story.narrativePlaceholder': 'Your event story will appear here as you answer questions...',
@@ -76,8 +76,8 @@ export const en = {
   'story.applyChanges': 'Apply Changes',
   'story.detailsVerified': 'Details verified',
   'story.detailsUnverified': 'Details unverified',
-  'story.classificationTitle': 'Information Type Classification',
-  'story.notEnoughData': 'Not enough data',
+  'story.classificationTitle': 'Classification',
+  'story.notEnoughData': 'Pending ...',
   'story.channels': 'Channels',
   'story.confidence': 'Confidence',
   'story.showReasoning': 'Show Data Points',
@@ -89,7 +89,7 @@ export const en = {
   'story.change': 'Change',
   'story.confirm': 'Confirm',
   'story.continue': 'Continue',
-  'story.orTypeYourOwn': 'Or type your own answer:',
+  'story.orTypeYourOwn': 'Not sure? Answer in your own words',
   'story.verificationHint': 'This information was extracted from one of your previous answers',
   'story.backToDetails': 'Back to Details',
   'story.reviewTitle': 'Review & Generate',
@@ -174,15 +174,15 @@ export const en = {
   'story.eventSavedLink': 'View in Documented Events',
 
   // History intro card
-  'story.intro.title': 'Event Story Builder',
-  'story.intro.description': 'Create consistent event communication aligned with the Content Design Principles — from classification to ready-to-use UI text.',
+  'story.intro.title': 'Event Communication Builder',
+  'story.intro.description': 'Answer a few questions about your event. Get classified, multi-channel text — ready to use.',
   'story.intro.howItWorks': 'How it works',
-  'story.intro.step1.title': 'Describe your event',
-  'story.intro.step1.desc': 'Answer questions by selecting options or adding your own text. The system adapts and asks follow-ups to fill any gaps.',
-  'story.intro.step2.title': 'Review the classification',
-  'story.intro.step2.desc': 'Based on your answers, you\'ll get a suggested type, severity level, and recommended communication channels. Verify or adjust anything before moving on.',
-  'story.intro.step3.title': 'Generate UI copy',
-  'story.intro.step3.desc': 'Get ready-to-use text for each recommended channel, tailored to the context and severity of your event.',
+  'story.intro.step1.title': 'Classify your event',
+  'story.intro.step1.desc': 'Select the category, scope, and impact. 2–5 quick choices.',
+  'story.intro.step2.title': 'Describe what happened',
+  'story.intro.step2.desc': 'Add details about the event. The system extracts structured information from your answers.',
+  'story.intro.step3.title': 'Get your channel text',
+  'story.intro.step3.desc': 'Receive ready-to-use text for each communication channel, tailored to your event\'s severity.',
 
   // Story Questions — questions
   'sq.eventTrigger.text': 'What triggered this event?',
@@ -482,6 +482,85 @@ export const en = {
   'classification.narrative.what': 'What',
   'classification.narrative.when': 'When',
   'classification.narrative.whatToDo': 'What to do',
+
+  // Classification Questions (Phase 1 — flat sequential flow)
+  // Q1: Category
+  'cl.q.category.text': 'What is this event about?',
+  'cl.q.category.help': 'Choose the area of the product that is affected. This determines how urgently we need to communicate.',
+  'cl.q.category.opt.core_value': 'The core product',
+  'cl.q.category.opt.core_value.desc': 'APIs, LLM models, pipelines — what users pay for',
+  'cl.q.category.opt.capability': 'A platform feature',
+  'cl.q.category.opt.capability.desc': 'File upload, export, search, dashboard widgets — supporting features',
+  'cl.q.category.opt.management': 'The management interface',
+  'cl.q.category.opt.management.desc': 'Admin console, settings, API key creation — where users configure things',
+
+  // Q2: Security
+  'cl.q.security.text': 'Is this a security or compliance issue?',
+  'cl.q.security.help': 'Security issues always get the highest urgency, regardless of scope.',
+  'cl.q.security.opt.yes': 'Yes, security or compliance is involved',
+  'cl.q.security.opt.yes.desc': 'Data breach, unauthorized access, compliance violation, vulnerability',
+  'cl.q.security.opt.no': 'No',
+
+  // Q3: Platform down
+  'cl.q.platform_down.text': 'Is the entire platform down?',
+  'cl.q.platform_down.help': 'A complete outage means no user can access any service.',
+  'cl.q.platform_down.opt.yes': 'Yes, complete outage',
+  'cl.q.platform_down.opt.no': 'No, specific services are affected',
+
+  // Q4: Scope
+  'cl.q.scope.text': 'How much is affected?',
+  'cl.q.scope.help': 'This helps determine the right narrative tone and channel urgency.',
+  'cl.q.scope.opt.all': 'All services',
+  'cl.q.scope.opt.all.desc': 'Every service in this area is affected',
+  'cl.q.scope.opt.some': 'Some services',
+  'cl.q.scope.opt.some.desc': 'Multiple services are affected, but not all',
+  'cl.q.scope.opt.one': 'One service',
+  'cl.q.scope.opt.one.desc': 'A single specific service is affected',
+  'cl.q.scope.opt.none': 'Nothing is broken',
+  'cl.q.scope.opt.none.desc': 'Informational — no service is currently impacted',
+
+  // Q5: Reach
+  'cl.q.reach.text': 'Who is affected?',
+  'cl.q.reach.help': 'This determines who receives the notification, not its urgency.',
+  'cl.q.reach.opt.all': 'Everyone using the service',
+  'cl.q.reach.opt.group': 'A specific user group',
+  'cl.q.reach.opt.group.desc': 'A subset of users, e.g. a specific region or plan',
+  'cl.q.reach.opt.single': 'A single user',
+
+  // M1: Form field check
+  'cl.q.mgmt_form_field.text': 'Is this about what happens when a user fills in a form?',
+  'cl.q.mgmt_form_field.help': 'Form field validation messages guide input in real time — they are different from post-submission errors.',
+  'cl.q.mgmt_form_field.opt.yes': 'Yes, it guides input on a form field',
+  'cl.q.mgmt_form_field.opt.yes.desc': 'Inline validation, format hints, required field indicators',
+  'cl.q.mgmt_form_field.opt.no': 'No, something else happened',
+
+  // M2: Trigger
+  'cl.q.mgmt_trigger.text': 'What triggered this event?',
+  'cl.q.mgmt_trigger.help': 'Did the user do something, or did the system generate this on its own?',
+  'cl.q.mgmt_trigger.opt.user': 'A user action',
+  'cl.q.mgmt_trigger.opt.user.desc': 'The user clicked, submitted, or performed an action',
+  'cl.q.mgmt_trigger.opt.system': 'A system event',
+  'cl.q.mgmt_trigger.opt.system.desc': 'Background process, scheduled task, or automated check',
+
+  // M3: Success
+  'cl.q.mgmt_success.text': 'Did the action succeed or fail?',
+  'cl.q.mgmt_success.help': 'Success leads to confirmations; failure leads to error messages.',
+  'cl.q.mgmt_success.opt.yes': 'It succeeded',
+  'cl.q.mgmt_success.opt.no': 'It failed or produced a warning',
+
+  // M4: Persistence
+  'cl.q.mgmt_persistence.text': 'Does the user need a record or reference number?',
+  'cl.q.mgmt_persistence.help': 'Transactions that create receipts, confirmation numbers, or audit trails need persistent confirmations.',
+  'cl.q.mgmt_persistence.opt.yes': 'Yes, a record or reference is needed',
+  'cl.q.mgmt_persistence.opt.yes.desc': 'Order number, confirmation ID, receipt, audit trail entry',
+  'cl.q.mgmt_persistence.opt.no': 'No, a brief acknowledgment is enough',
+
+  // M5: Ongoing
+  'cl.q.mgmt_ongoing.text': 'Is this an ongoing condition or a one-time event?',
+  'cl.q.mgmt_ongoing.help': 'Ongoing conditions need a persistent status display; one-time events need a notification.',
+  'cl.q.mgmt_ongoing.opt.yes': 'Ongoing — it persists over time',
+  'cl.q.mgmt_ongoing.opt.yes.desc': 'System status, processing queue, resource utilization',
+  'cl.q.mgmt_ongoing.opt.no': 'One-time — it happened and is done',
 
   // Chat
   'chat.welcome.title': 'What product copy do you need?',

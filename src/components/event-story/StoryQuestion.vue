@@ -202,7 +202,7 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
-// Reset change form state when question changes
+// Reset state when question changes
 watch(() => props.question.id, () => {
   showChangeForm.value = false
   selectedOptions.value = []

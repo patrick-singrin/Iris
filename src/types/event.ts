@@ -1,4 +1,4 @@
-import type { PathEntry } from './decisionTree'
+import type { PathEntry } from '@/data/classification-questions'
 
 export interface EventDescription {
   // Impact assessment fields (collected in Step 2 for notifications)

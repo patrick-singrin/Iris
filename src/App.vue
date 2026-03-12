@@ -5,6 +5,7 @@ import EventDetailView from '@/components/documentation/EventDetailView.vue'
 import DesignPrinciplesView from '@/components/design-principles/DesignPrinciplesView.vue'
 import ChatView from '@/components/chat/ChatView.vue'
 import EventStoryView from '@/components/event-story/EventStoryView.vue'
+import StatusChip from '@/components/shared/StatusChip.vue'
 import { useAppStore, type AppView } from '@/stores/appStore'
 import { useI18n, type Locale } from '@/i18n'
 
@@ -75,6 +76,9 @@ function setLang(lang: string) {
         </scale-telekom-nav-item>
       </scale-telekom-nav-list>
 
+      <!-- LLM Status Chip: model name + connection status -->
+      <StatusChip slot="functions" />
+
     </scale-telekom-header>
 
     <div class="app-content">
@@ -95,18 +99,32 @@ body {
 
 .app-content {
   padding: 32px 32px 0;
-  min-height: calc(100vh - 96px);
+  min-height: calc(100vh - 84px);
 }
 
 .app-content:has(.chat-view),
 .app-content:has(.event-story-view) {
   padding: 0;
   overflow: hidden;
-  height: calc(100vh - 96px);
+  height: calc(100vh - 84px);
   min-height: 0;
 }
 
 scale-telekom-app-shell {
   --telekom-color-background-canvas: #fbfbfb;
+}
+
+/* Push the StatusChip to the top of the functions slot by removing the
+   responsive padding-top that Scale's header applies to the slot. */
+scale-telekom-header slot[name='functions'] {
+  padding-top: 0 !important;
+  align-self: flex-start;
+}
+
+/* Hide the app shell's empty footer slot when event-story view is active
+   to prevent a white bar at the bottom of the viewport. */
+scale-telekom-app-shell:has(.event-story-view) [slot="footer"],
+scale-telekom-app-shell:has(.event-story-view) scale-telekom-footer {
+  display: none !important;
 }
 </style>

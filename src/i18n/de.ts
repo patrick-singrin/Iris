@@ -76,7 +76,7 @@ export const de: Record<string, string> = {
   'story.applyChanges': 'Änderungen übernehmen',
   'story.detailsVerified': 'Details verifiziert',
   'story.detailsUnverified': 'Details nicht verifiziert',
-  'story.classificationTitle': 'Event-Klassifizierung',
+  'story.classificationTitle': 'Informationstyp-Klassifizierung',
   'story.notEnoughData': 'Nicht genügend Daten',
   'story.channels': 'Kanäle',
   'story.confidence': 'Konfidenz',

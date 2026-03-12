@@ -7,17 +7,17 @@
   "nodes": {
     "start": {
       "type": "question",
-      "text": "Is the user actively doing something?",
-      "description": "Think about what triggers this event. Is the user in the middle of an action right now?",
+      "text": "Is the user doing something right now?",
+      "description": "Focus on the moment the event happens. Is the user actively performing an action in the UI at that exact moment?",
       "options": [
         {
-          "label": "Yes — triggered by the user",
-          "description": "A click, form submission, API call, upload, or setting change",
+          "label": "Yes — the user is acting right now",
+          "description": "A click, form submission, API call, or direct interaction happening at this moment",
           "next": "user_problem_check"
         },
         {
-          "label": "No — it happens independently",
-          "description": "System process, admin change, scheduled task, or background operation",
+          "label": "No — it happens in the background",
+          "description": "Scheduled task, automated process, system event, or something the user set up earlier",
           "next": "system_temporality"
         }
       ]
@@ -84,17 +84,17 @@
 
     "system_temporality": {
       "type": "question",
-      "text": "Is this an ongoing condition or a one-time event?",
-      "description": "Does it persist and change over time, or did it happen at a specific moment?",
+      "text": "What are you showing the user?",
+      "description": "Think about the message itself: is it a live status that stays on screen and updates, or a one-time message about something that happened or will happen?",
       "options": [
         {
-          "label": "Ongoing condition",
-          "description": "Service health, API availability, quota usage, connection status",
+          "label": "A live status that updates continuously",
+          "description": "Dashboard health indicator, quota meter, connection status badge — always visible, changes over time",
           "next": "result_status_display_system"
         },
         {
-          "label": "A specific event or announcement",
-          "description": "Maintenance, deprecation, pricing change, outage, or feature release",
+          "label": "A message about something that happened or will happen",
+          "description": "Key rotated, maintenance scheduled, service deprecated, outage resolved, feature released",
           "next": "result_notification"
         }
       ]

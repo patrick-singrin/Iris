@@ -4,10 +4,10 @@ import type { RenderableQuestion } from '@/data/story-questions'
 import RadioTile from './RadioTile.vue'
 import CheckboxTile from './CheckboxTile.vue'
 import ConfirmationTile from './ConfirmationTile.vue'
-import FreeformEscapeHatch from './FreeformEscapeHatch.vue'
 import AppIcon from '@/components/shared/AppIcon.vue'
 import { useI18n } from '@/i18n'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { createProvider } from '@/services/llm/providerFactory'
 
 const { t } = useI18n()
 
@@ -24,7 +24,6 @@ const selectedOptions = ref<string[]>([])
 const freeformText = ref('')
 const collapsed = ref(false)
 const showChangeForm = ref(false)
-const escapeHatchOpen = ref(false)
 
 const { state: settingsState } = useSettingsStore()
 const isTreeQuestion = computed(() => props.question.origin === 'tree')
@@ -33,14 +32,99 @@ const hasLLM = computed(() => {
     || settingsState.anthropicApiKey !== ''
     || settingsState.llmHubApiKey !== ''
 })
-const showEscapeHatch = computed(() => isTreeQuestion.value && hasLLM.value)
-
 // Verification mode
 const isVerification = computed(() => props.question.origin === 'verify' && !showChangeForm.value)
 
 const canSubmit = computed(() => {
   return selectedOptions.value.length > 0 || freeformText.value.trim().length > 0
 })
+
+// ---------------------------------------------------------------------------
+// LLM-assisted freeform mapping (escape hatch integrated into textarea)
+// ---------------------------------------------------------------------------
+
+interface LlmSuggestion {
+  optionIndex: number
+  label: string
+  explanation: string
+  confidence: string
+}
+
+const llmSuggestion = ref<LlmSuggestion | null>(null)
+const llmLoading = ref(false)
+const llmError = ref('')
+const llmRetryCount = ref(0)
+const showLlmNudge = computed(() => llmRetryCount.value >= 3)
+
+/** True when the user typed freeform text on a tree question without selecting a radio option. */
+const isFreeformOnlySubmit = computed(() =>
+  isTreeQuestion.value && hasLLM.value
+  && freeformText.value.trim().length > 0
+  && selectedOptions.value.length === 0,
+)
+
+async function requestLlmMapping() {
+  if (llmLoading.value) return
+  llmLoading.value = true
+  llmError.value = ''
+  llmSuggestion.value = null
+
+  try {
+    const optionDescriptions = props.question.options
+      .map((opt, idx) => `${idx + 1}. "${opt.label}"${opt.description ? ` — ${opt.description}` : ''}`)
+      .join('\n')
+
+    const prompt = `You are helping a user classify a platform event. They were asked the following question but couldn't pick an option.
+
+Question: "${props.question.text}"
+${props.question.helpText ? `Context: ${props.question.helpText}` : ''}
+
+Available options:
+${optionDescriptions}
+
+The user described their situation as: "${freeformText.value}"
+
+Map their description to the most appropriate option. Respond with ONLY a JSON object:
+{"optionIndex": <0-based index>, "label": "<option label>", "explanation": "<1-2 sentence explanation>", "confidence": "high"|"medium"|"low"}`
+
+    const provider = createProvider()
+    const genResult = await provider.generateText({
+      systemPrompt: 'You are helping a user classify a platform event. Respond with ONLY a JSON object.',
+      userPrompt: prompt,
+    })
+    const response = genResult.rawResponse
+
+    const jsonMatch = response.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      if (typeof parsed.optionIndex === 'number' && parsed.optionIndex >= 0 && parsed.optionIndex < props.question.options.length) {
+        llmSuggestion.value = parsed
+      } else {
+        llmError.value = t('classification.escapeHatch.noMatch')
+      }
+    } else {
+      llmError.value = t('classification.escapeHatch.noMatch')
+    }
+  } catch {
+    llmError.value = t('classification.escapeHatch.noMatch')
+  } finally {
+    llmLoading.value = false
+    llmRetryCount.value++
+  }
+}
+
+function acceptSuggestion() {
+  if (!llmSuggestion.value) return
+  selectSingle(String(llmSuggestion.value.optionIndex))
+  llmSuggestion.value = null
+  nextTick(() => handleSubmit())
+}
+
+function rejectSuggestion() {
+  llmSuggestion.value = null
+  freeformText.value = ''
+  llmError.value = ''
+}
 
 // ---------------------------------------------------------------------------
 // Confirmation actions
@@ -79,15 +163,15 @@ function handleFreeformInput(event: Event) {
 
 function handleSubmit() {
   if (!canSubmit.value) return
+  // If user typed freeform text without selecting an option on a tree question,
+  // use LLM to map their description to the best option
+  if (isFreeformOnlySubmit.value) {
+    requestLlmMapping()
+    return
+  }
   emit('answer', [...selectedOptions.value], freeformText.value.trim())
   selectedOptions.value = []
   freeformText.value = ''
-}
-
-function handleEscapeHatchSelect(optionIndex: number) {
-  selectSingle(String(optionIndex))
-  escapeHatchOpen.value = false
-  nextTick(() => handleSubmit())
 }
 
 // ---------------------------------------------------------------------------
@@ -121,9 +205,11 @@ function handleKeydown(event: KeyboardEvent) {
 // Reset change form state when question changes
 watch(() => props.question.id, () => {
   showChangeForm.value = false
-  escapeHatchOpen.value = false
   selectedOptions.value = []
   freeformText.value = ''
+  llmSuggestion.value = null
+  llmError.value = ''
+  llmLoading.value = false
 })
 
 onMounted(async () => {
@@ -276,43 +362,50 @@ function onAfterLeave(el: Element) {
             </template>
           </div>
 
-          <!-- Escape hatch trigger (tree questions only) -->
-          <template v-if="showEscapeHatch">
-            <button
-              v-if="!escapeHatchOpen"
-              class="input-panel__escape-trigger"
-              @click="escapeHatchOpen = true"
-            >
-              {{ t('classification.escapeHatch.trigger') }}
-            </button>
-            <FreeformEscapeHatch
-              v-if="escapeHatchOpen"
-              :question="question"
-              :visible="escapeHatchOpen"
-              @select-option="handleEscapeHatchSelect"
-              @close="escapeHatchOpen = false"
-            />
+          <!-- LLM suggestion (shown after freeform submit on tree questions) -->
+          <div v-if="llmSuggestion" class="input-panel__suggestion">
+            <div class="input-panel__suggestion-header">
+              <strong>{{ llmSuggestion.label }}</strong>
+              <span class="input-panel__confidence" :class="`input-panel__confidence--${llmSuggestion.confidence}`">
+                {{ llmSuggestion.confidence }}
+              </span>
+            </div>
+            <p class="input-panel__suggestion-explanation">{{ llmSuggestion.explanation }}</p>
+            <div class="input-panel__buttons">
+              <scale-button size="small" variant="secondary" @click="rejectSuggestion">
+                {{ t('classification.escapeHatch.tryAgain') }}
+              </scale-button>
+              <scale-button size="small" @click="acceptSuggestion">
+                {{ t('classification.escapeHatch.useThis') }}
+              </scale-button>
+            </div>
+          </div>
+
+          <!-- Freeform textarea (hidden when showing suggestion) -->
+          <template v-if="!llmSuggestion">
+            <div v-if="question.allowFreeform" class="input-panel__textarea">
+              <scale-textarea
+                :value="freeformText"
+                :label="question.options.length > 0 ? t('story.orTypeYourOwn') : undefined"
+                :aria-label="question.options.length === 0 ? question.text : undefined"
+                :placeholder="question.freeformPlaceholder || t('story.typeYourAnswer')"
+                rows="3"
+                resize="vertical"
+                @scaleChange="handleFreeformInput"
+              />
+            </div>
+
+            <!-- Error / nudge messages -->
+            <p v-if="llmError" class="input-panel__error">{{ llmError }}</p>
+            <p v-if="showLlmNudge" class="input-panel__nudge">{{ t('classification.escapeHatch.nudge') }}</p>
+
+            <!-- Continue button -->
+            <div class="input-panel__buttons">
+              <scale-button :disabled="!canSubmit || llmLoading" @click="handleSubmit">
+                {{ llmLoading ? '...' : t('story.continue') }}
+              </scale-button>
+            </div>
           </template>
-
-          <!-- Freeform textarea -->
-          <div v-if="question.allowFreeform" class="input-panel__textarea">
-            <scale-textarea
-              :value="freeformText"
-              :label="question.options.length > 0 ? t('story.orTypeYourOwn') : undefined"
-              :aria-label="question.options.length === 0 ? question.text : undefined"
-              :placeholder="question.freeformPlaceholder || t('story.typeYourAnswer')"
-              rows="3"
-              resize="vertical"
-              @scaleChange="handleFreeformInput"
-            />
-          </div>
-
-          <!-- Continue button -->
-          <div class="input-panel__buttons">
-            <scale-button :disabled="!canSubmit" @click="handleSubmit">
-              {{ t('story.continue') }}
-            </scale-button>
-          </div>
         </template>
       </div>
     </Transition>
@@ -409,19 +502,67 @@ function onAfterLeave(el: Element) {
   gap: 16px;
 }
 
-.input-panel__escape-trigger {
-  background: none;
-  border: none;
-  padding: 0;
-  font-family: 'TeleNeo', sans-serif;
-  font-size: 14px;
-  color: var(--telekom-color-text-and-icon-link, #00739f);
-  cursor: pointer;
-  text-decoration: underline;
-  text-align: left;
+/* LLM suggestion inline */
+.input-panel__suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--telekom-color-background-canvas-subtle, #fbfbfb);
+  border-radius: 8px;
+  border: 1px solid var(--telekom-color-ui-faint, #dfdfe1);
 }
 
-.input-panel__escape-trigger:hover {
-  color: var(--telekom-color-text-and-icon-link-hovered, #005a7e);
+.input-panel__suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+}
+
+.input-panel__confidence {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.input-panel__confidence--high {
+  background: var(--telekom-color-functional-success-subtle);
+  color: var(--telekom-color-text-and-icon-on-subtle-success);
+}
+
+.input-panel__confidence--medium {
+  background: var(--telekom-color-functional-warning-subtle);
+  color: var(--telekom-color-text-and-icon-on-subtle-warning);
+}
+
+.input-panel__confidence--low {
+  background: var(--telekom-color-functional-danger-subtle);
+  color: var(--telekom-color-text-and-icon-on-subtle-danger);
+}
+
+.input-panel__suggestion-explanation {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 14px;
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
+  margin: 0;
+}
+
+.input-panel__error {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  color: var(--telekom-color-functional-danger-standard, #e82010);
+  margin: 0;
+}
+
+.input-panel__nudge {
+  font-family: 'TeleNeo', sans-serif;
+  font-size: 13px;
+  color: var(--telekom-color-text-and-icon-additional, rgba(0, 0, 0, 0.65));
+  font-style: italic;
+  margin: 0;
 }
 </style>

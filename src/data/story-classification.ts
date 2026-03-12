@@ -192,7 +192,7 @@ export function assessChannelQuality(
         ? { channel, status: 'good' as const, message: t('sq.quality.bannerReady') }
         : { channel, status: 'needs-work' as const, message: t('sq.quality.bannerNeeds') }
     }
-    if (channel.includes('Email')) {
+    if (channel.includes('Mail')) {
       const has = ['what_happened', 'who_affected', 'user_impact', 'what_to_do'].every(id => getItem(checklist, id).filled)
       return has
         ? { channel, status: 'good' as const, message: t('sq.quality.emailReady') }

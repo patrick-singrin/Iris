@@ -260,7 +260,7 @@ describe('assessChannelQuality', () => {
 
   it('assesses Banner channel as needs-work when incomplete', () => {
     const cl = makeChecklist({ event_trigger: 'system_runtime' })
-    const result = assessChannelQuality(cl, ['Banner (persistent)'])
+    const result = assessChannelQuality(cl, ['Banner'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('needs-work')
   })
@@ -272,14 +272,14 @@ describe('assessChannelQuality', () => {
       timing: 'now',
       action_required: 'no',
     })
-    const result = assessChannelQuality(cl, ['Banner (persistent)'])
+    const result = assessChannelQuality(cl, ['Banner'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('good')
   })
 
   it('assesses Email channel as needs-work when incomplete', () => {
     const cl = makeChecklist({ event_trigger: 'system_runtime' })
-    const result = assessChannelQuality(cl, ['Email (High Importance)'])
+    const result = assessChannelQuality(cl, ['E-Mail'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('needs-work')
   })
@@ -292,7 +292,7 @@ describe('assessChannelQuality', () => {
       user_impact: 'blocked',
       what_to_do: 'Wait for resolution',
     })
-    const result = assessChannelQuality(cl, ['Email (High Importance)'])
+    const result = assessChannelQuality(cl, ['E-Mail'])
     expect(result).toHaveLength(1)
     expect(result[0]!.status).toBe('good')
   })
@@ -317,7 +317,7 @@ describe('assessChannelQuality', () => {
       user_impact: 'blocked',
       what_to_do: 'Wait',
     })
-    const result = assessChannelQuality(cl, ['Banner (persistent)', 'Email (High Importance)', 'Dashboard'])
+    const result = assessChannelQuality(cl, ['Banner', 'E-Mail', 'Dashboard'])
     expect(result).toHaveLength(3)
     expect(result.every(r => r.status === 'good')).toBe(true)
   })

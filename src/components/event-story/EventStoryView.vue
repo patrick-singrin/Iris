@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import StoryDialog from './StoryDialog.vue'
 import StoryPanel from './StoryPanel.vue'
 import StoryQuestion from './StoryQuestion.vue'
+import HistoryIntroCard from './HistoryIntroCard.vue'
+import HistoryItem from './HistoryItem.vue'
 import TextGenerationPanel from './TextGenerationPanel.vue'
 import TextFeedbackChat from './TextFeedbackChat.vue'
 import { useEventStoryStore } from '@/stores/eventStoryStore'
@@ -16,6 +18,7 @@ const classificationStore = useClassificationStore()
 const feedbackStore = useTextFeedbackStore()
 
 const currentTreeQuestion = computed(() => classificationStore.getCurrentQuestion())
+const historyRef = ref<HTMLDivElement>()
 
 function handleTreeAnswer(selectedOptions: string[], _freeformText: string) {
   const first = selectedOptions[0]
@@ -25,6 +28,17 @@ function handleTreeAnswer(selectedOptions: string[], _freeformText: string) {
     classificationStore.answerQuestion(optionIndex)
   }
 }
+
+// Auto-scroll history when new answers are added
+watch(
+  () => classificationStore.path.value.length,
+  async () => {
+    await nextTick()
+    if (historyRef.value) {
+      historyRef.value.scrollTop = historyRef.value.scrollHeight
+    }
+  },
+)
 
 function handleNewChat() {
   feedbackStore.clearConversation()
@@ -48,15 +62,32 @@ onUnmounted(() => {
     <!-- Interview + inline analysis (two-column) -->
     <template v-if="phase === 'collect'">
       <div class="event-story-view__main">
-        <!-- Classification flow (Phase 1) -->
+        <!-- Classification flow (Phase 1): chat layout -->
         <template v-if="!classificationStore.isComplete.value">
-          <div class="event-story-view__classification">
-            <StoryQuestion
-              v-if="currentTreeQuestion"
-              :key="currentTreeQuestion.id"
-              :question="currentTreeQuestion"
-              @answer="handleTreeAnswer"
-            />
+          <!-- History area (scrollable, top) -->
+          <div ref="historyRef" class="event-story-view__history">
+            <div class="event-story-view__history-content">
+              <HistoryIntroCard />
+              <HistoryItem
+                v-for="(entry, idx) in classificationStore.path.value"
+                :key="idx"
+                type="question"
+                :question-text="entry.questionText"
+                :answer-text="entry.selectedLabel"
+              />
+            </div>
+          </div>
+
+          <!-- Input panel (anchored, bottom) -->
+          <div class="event-story-view__input">
+            <div class="event-story-view__input-content">
+              <StoryQuestion
+                v-if="currentTreeQuestion"
+                :key="currentTreeQuestion.id"
+                :question="currentTreeQuestion"
+                @answer="handleTreeAnswer"
+              />
+            </div>
           </div>
         </template>
 
@@ -166,12 +197,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.event-story-view__main::-webkit-scrollbar {
-  display: none;
+  overflow: hidden;
 }
 
 .event-story-view__sidebar {
@@ -181,6 +207,38 @@ onUnmounted(() => {
   flex-direction: column;
   padding-top: 16px;
   padding-bottom: 16px;
+}
+
+/* Chat layout: history (scrollable top) + input (anchored bottom) */
+.event-story-view__history {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 16px 0;
+}
+
+.event-story-view__history::-webkit-scrollbar {
+  display: none;
+}
+
+.event-story-view__history-content {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.event-story-view__input {
+  flex-shrink: 0;
+  padding: 16px 0;
+}
+
+.event-story-view__input-content {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Tabbed sidebar card (text-generation phase) */
@@ -224,18 +282,7 @@ onUnmounted(() => {
   padding: 24px;
 }
 
-/* Classification flow layout */
-.event-story-view__classification {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 16px;
-  max-width: 640px;
-  margin: 0 auto;
-  width: 100%;
-}
-
+/* Post-classification result card */
 .event-story-view__result {
   display: flex;
   flex-direction: column;
@@ -245,6 +292,7 @@ onUnmounted(() => {
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
+  overflow-y: auto;
 }
 
 .result-card {

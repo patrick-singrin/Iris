@@ -99,3 +99,66 @@ Each failure mode gets its own targeted fix, applied in sequence. See [JSON Pars
 **Enforcement**: The rule is documented in `content-design-principles.md` and reinforced with "HARD REQUIREMENT" language in both `promptBuilder.ts` (system prompt) and `storyTextGenerator.ts` (user prompt). A post-processing placeholder replacement step may be added as a safety net in the future.
 
 **History**: Added 2026-03-04 after user testing revealed generated channel text with concrete values instead of placeholder tokens.
+
+## 13. Deterministic Classification via Decision Trees (Phase 1)
+
+**Decision**: Replace LLM-based event classification with two chained, deterministic decision trees. Users click through 2–7 structured questions to classify event type and severity before the LLM interview starts.
+
+**Why**: LLM-based classification was unreliable — the model frequently misinterpreted scope and severity. For example, "Users can set API Key auto rotation" was classified as impacting "all users" when it clearly affects a single user. Explicit user selections eliminate guesswork and give accurate, reproducible classification every time.
+
+**How**: Two JSON-based trees are walked sequentially:
+1. **Information-Type Tree** (`decision-tree_information-type.json`) — 5 question nodes, classifies into one of 6 types (Feedback, Validation Messages, Error & Warnings, Transactional Confirmation, Status Display, Notification).
+2. **Notification-Severity Tree** (`decision-tree_notification-severity.json`) — 6 question nodes, only entered when type = "Notification". Determines CRITICAL / HIGH / MEDIUM / LOW severity with channel recommendations.
+
+Trees are chained via a `continueWith` field on result nodes. The `classificationStore.ts` manages tree walking, and the transition between trees is seamless — the user sees one continuous question flow.
+
+**Trade-off**: Users answer a few more explicit questions upfront, but classification accuracy is 100% by definition (the user chose it). The LLM interview that follows (Phase 2) can focus on extraction and narrative quality rather than trying to infer classification from freeform text.
+
+**History**: Added 2026-03-12. Motivated by persistent LLM classification errors in pipeline evaluation.
+
+## 14. Progressive Classification Narrative (W-Headings from Tree Answers)
+
+**Decision**: Build a structured W-heading narrative progressively during classification, before any LLM involvement. Each tree answer maps to a sentence in one of the four W-heading sections (What / Who / When / What to do).
+
+**Why**: The narrative textarea in the sidebar would be empty during the entire classification phase (2–7 questions). This feels broken — the user sees no feedback. Instead, a rules-based mapper (`classificationNarrativeBuilder.ts`) translates each answer into a plain-English sentence and slots it into the correct W-heading section. The narrative grows in real time as the user clicks options.
+
+**How**: A mapping table covers all 11 question nodes across both trees. Each mapper function takes the selected option label, matches it with `string.includes()`, and returns a `NarrativeContribution` specifying:
+- Which section it belongs to (`what`, `who`, `when`, `whatToDo`)
+- The text to insert
+- Whether to `set` (replace) or `append` (add detail after existing text)
+
+The `When:` section is hardcoded to `NOW` because events in Iris are always happening right now (see Decision #11). When classification completes, the narrative is seeded into the editable textarea as the starting point for Phase 2.
+
+**Example**: After answering "No — it happens in the background" → "A specific event or announcement" → "No — some or all services work" → "No" → "No — they're blocked" → "Many users", the narrative reads:
+```
+What:
+A background system event occurred. An event notification needs to be communicated to users. Part of the platform is still operational.
+
+Who:
+Users are blocked from completing their tasks. Many users are affected.
+
+When:
+NOW
+```
+
+**History**: Added 2026-03-12. Part of the Phase 1 classification flow implementation.
+
+## 15. Simplified Channel Names in Classification Results
+
+**Decision**: Channel names in classification results use short labels — `Banner`, `Dashboard`, `E-Mail`, `Status Page` — not descriptive variants like `Banner (persistent, must acknowledge)` or `Email (High Importance)`.
+
+**Why**: The descriptive names were useful during internal design (to distinguish banner types) but confusing in the user-facing ClassificationTile. Users don't need to know whether a banner is "persistent, must acknowledge" vs. "persistent, dismissible" — that's a downstream implementation detail. Short names are clearer and match the Figma designs.
+
+**How**: Updated all result nodes in `decision-tree_notification-severity.json` to use simplified channel names. Also unified email naming to `E-Mail` (matching Telekom convention) and fixed the `assessChannelQuality()` substring matcher in `story-classification.ts` to use `channel.includes('Mail')` instead of `channel.includes('Email')`.
+
+**History**: Added 2026-03-12. Changed after Figma design review showed clean, short channel tags.
+
+## 16. ClassificationTile — No Tone Section
+
+**Decision**: The ClassificationTile in the sidebar shows only Information Type, Severity, and Channels. There is no Tone section.
+
+**Why**: Tone was part of an earlier design iteration but was removed from the Figma designs (node `209:4830`). The classification trees don't produce a tone value, and tone is better addressed during text generation (Phase 3) where the LLM can adapt tone to channel constraints.
+
+**How**: Removed the `tile-classification__bottom` flex wrapper that held Channels and Tone side-by-side. Channels became a standalone section, direct child of the root container. Removed `story.tone` i18n keys from both `en.ts` and `de.ts`.
+
+**History**: Added 2026-03-12. Aligned with Figma design for the classification sidebar.

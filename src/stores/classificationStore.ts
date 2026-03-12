@@ -10,6 +10,7 @@ import { ref, computed } from 'vue'
 import type { PathEntry, QuestionNode, ResultNode, TreeNode } from '@/types/decisionTree'
 import { isQuestionNode, isResultNode } from '@/types/decisionTree'
 import { loadTree, getNode, hasContinuation } from '@/services/decisionTree'
+import { buildProgressiveNarrative } from '@/services/classificationNarrativeBuilder'
 import type { RenderableQuestion } from '@/data/story-questions'
 import type { StoryClassification } from '@/data/story-classification'
 
@@ -25,12 +26,6 @@ export interface ClassificationResult {
   path: PathEntry[]
 }
 
-export interface Narrative4W {
-  who: string
-  what: string
-  when: string
-  whatToDo: string
-}
 
 // ---------------------------------------------------------------------------
 // Module-level state
@@ -58,6 +53,12 @@ initEntry()
 // ---------------------------------------------------------------------------
 
 const answeredQuestions = computed(() => path.value.length)
+
+/** Human-readable label for current progress step (e.g. "Event Trigger"). */
+const currentStepLabel = computed(() => {
+  const tree = loadTree(currentTreeId.value)
+  return tree.name || currentTreeId.value
+})
 
 const totalQuestions = computed(() => {
   if (isComplete.value) return answeredQuestions.value
@@ -92,32 +93,10 @@ function maxDepth(
   return 1 + max
 }
 
-const narrative4W = computed<Narrative4W>(() => {
-  const n: Narrative4W = { who: '', what: '', when: 'NOW', whatToDo: '' }
-
-  // Extract from path entries (primarily severity tree nodes)
-  for (const entry of path.value) {
-    // Scope questions -> who
-    if (entry.nodeId === 'blocked_scope' || entry.nodeId === 'degraded_scope') {
-      n.who = entry.selectedLabel
-    }
-    // Impact question -> what
-    if (entry.nodeId === 'impact') {
-      n.what = entry.selectedLabel
-    }
-    // Action question -> whatToDo
-    if (entry.nodeId === 'action') {
-      n.whatToDo = entry.selectedLabel
-    }
-  }
-
-  // Append trigger from result
-  if (result.value?.trigger) {
-    n.what = n.what ? `${n.what} — ${result.value.trigger}` : result.value.trigger
-  }
-
-  return n
-})
+/** Progressive W-heading narrative built from all classification answers. */
+const narrativeText = computed(() =>
+  buildProgressiveNarrative(path.value, result.value?.trigger),
+)
 
 // ---------------------------------------------------------------------------
 // Methods
@@ -193,7 +172,7 @@ function treeNodeToRenderable(node: QuestionNode, nodeId: string): RenderableQue
       label: opt.label,
       description: opt.description,
     })),
-    allowFreeform: false,
+    allowFreeform: true,
     origin: 'tree',
     targetChecklistItems: [],
   }
@@ -208,6 +187,30 @@ function toStoryClassification(res: ClassificationResult): StoryClassification {
     confidence: 1,
   }
 }
+
+/**
+ * Progressive classification that updates live as the user answers questions.
+ * Shows type as soon as the first tree completes (via pendingClassification),
+ * and full result once classification is done.
+ */
+const progressiveClassification = computed<StoryClassification | null>(() => {
+  // Final result takes precedence
+  if (result.value) {
+    return toStoryClassification(result.value)
+  }
+
+  // During severity tree, we know the type from the intermediate result
+  if (pendingClassification.value) {
+    return {
+      type: pendingClassification.value,
+      severity: null,
+      channels: [],
+      confidence: 0.5,
+    }
+  }
+
+  return null
+})
 
 function reset() {
   currentTreeId.value = INITIAL_TREE
@@ -235,7 +238,9 @@ export function useClassificationStore() {
     // Computed
     answeredQuestions,
     totalQuestions,
-    narrative4W,
+    currentStepLabel,
+    narrativeText,
+    progressiveClassification,
 
     // Methods
     answerQuestion,

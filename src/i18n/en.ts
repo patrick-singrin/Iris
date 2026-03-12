@@ -76,7 +76,7 @@ export const en = {
   'story.applyChanges': 'Apply Changes',
   'story.detailsVerified': 'Details verified',
   'story.detailsUnverified': 'Details unverified',
-  'story.classificationTitle': 'Event Classification',
+  'story.classificationTitle': 'Information Type Classification',
   'story.notEnoughData': 'Not enough data',
   'story.channels': 'Channels',
   'story.confidence': 'Confidence',

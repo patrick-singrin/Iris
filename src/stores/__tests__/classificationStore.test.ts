@@ -49,20 +49,20 @@ describe('classificationStore', () => {
     it('advances to next node on answer', () => {
       const store = useClassificationStore()
       store.reset()
-      // Answer "Yes — triggered by the user" (option 0)
+      // Answer "Yes — the user is acting right now" (option 0)
       store.answerQuestion(0)
       expect(store.currentNodeId.value).toBe('user_problem_check')
       expect(store.path.value).toHaveLength(1)
-      expect(store.path.value[0]!.selectedLabel).toBe('Yes — triggered by the user')
+      expect(store.path.value[0]!.selectedLabel).toBe('Yes — the user is acting right now')
     })
 
     it('records path entries correctly', () => {
       const store = useClassificationStore()
       store.reset()
-      store.answerQuestion(0) // "Yes — triggered by the user"
+      store.answerQuestion(0) // "Yes — the user is acting right now"
       store.answerQuestion(0) // "Yes — there's a problem"
       expect(store.path.value).toHaveLength(2)
-      expect(store.path.value[0]!.questionText).toBe('Is the user actively doing something?')
+      expect(store.path.value[0]!.questionText).toBe('Is the user doing something right now?')
       expect(store.path.value[1]!.questionText).toBe('Did something go wrong?')
     })
   })
@@ -131,7 +131,7 @@ describe('classificationStore', () => {
   })
 
   // -------------------------------------------------------------------------
-  // Task 4: totalQuestions and Narrative4W
+  // Task 4: totalQuestions and narrativeText
   // -------------------------------------------------------------------------
   describe('totalQuestions', () => {
     it('estimates total including remaining questions on longest path', () => {
@@ -158,14 +158,15 @@ describe('classificationStore', () => {
     })
   })
 
-  describe('narrative4W', () => {
-    it('always has when = NOW', () => {
+  describe('narrativeText', () => {
+    it('always contains When: NOW', () => {
       const store = useClassificationStore()
       store.reset()
-      expect(store.narrative4W.value.when).toBe('NOW')
+      // Even with empty path, narrativeText includes When section
+      expect(store.narrativeText.value).toContain('When:\nNOW')
     })
 
-    it('fills who from scope questions in severity tree', () => {
+    it('includes who from scope questions in severity tree', () => {
       const store = useClassificationStore()
       store.reset()
       // Get to severity tree
@@ -177,17 +178,17 @@ describe('classificationStore', () => {
       store.answerQuestion(0) // No — blocked -> blocked_scope
       store.answerQuestion(0) // Many users -> r_high_blocked_many
 
-      expect(store.narrative4W.value.who).toBe('Many users')
+      expect(store.narrativeText.value).toContain('Many users are affected.')
     })
 
-    it('includes trigger in what field when complete', () => {
+    it('includes trigger in narrative when complete', () => {
       const store = useClassificationStore()
       store.reset()
       store.answerQuestion(1) // No — independent
       store.answerQuestion(1) // Specific event -> chains
       store.answerQuestion(0) // complete outage -> CRITICAL result
       expect(store.result.value?.trigger).toBeTruthy()
-      expect(store.narrative4W.value.what).toContain(store.result.value!.trigger)
+      expect(store.narrativeText.value).toContain(store.result.value!.trigger)
     })
   })
 
@@ -233,7 +234,7 @@ describe('classificationStore', () => {
       expect(q!.origin).toBe('tree')
       expect(q!.inputType).toBe('single')
       expect(q!.options.length).toBeGreaterThan(0)
-      expect(q!.allowFreeform).toBe(false)
+      expect(q!.allowFreeform).toBe(true)
       expect(q!.id).toBe('start')
     })
 
@@ -247,19 +248,10 @@ describe('classificationStore', () => {
   })
 
   // -------------------------------------------------------------------------
-  // narrative4W.whatToDo coverage
+  // narrativeText "What to do" coverage
   // -------------------------------------------------------------------------
-  describe('narrative4W.whatToDo', () => {
-    // The severity tree (decision-tree_notification-severity.json) does not
-    // currently contain a node with id "action". The narrative4W computed
-    // property does check for entry.nodeId === 'action' to populate whatToDo,
-    // but no path through the current tree reaches such a node.
-    //
-    // When an "action" node is added to the severity tree in a future
-    // revision, a test should be added here that walks to it and verifies
-    // narrative4W.whatToDo gets populated with the selected label.
-
-    it('defaults to empty string when no action node is visited', () => {
+  describe('narrativeText whatToDo section', () => {
+    it('omits "What to do" section when action node is not visited (CRITICAL path)', () => {
       const store = useClassificationStore()
       store.reset()
       // Walk to a CRITICAL result — no action node on this path
@@ -267,7 +259,23 @@ describe('classificationStore', () => {
       store.answerQuestion(1) // Specific event -> Notification -> chains
       store.answerQuestion(0) // complete outage -> CRITICAL
       expect(store.isComplete.value).toBe(true)
-      expect(store.narrative4W.value.whatToDo).toBe('')
+      // CRITICAL path bypasses the action node, so "What to do:" should not appear
+      expect(store.narrativeText.value).not.toContain('What to do:')
+    })
+
+    it('includes "What to do" section when action node is visited', () => {
+      const store = useClassificationStore()
+      store.reset()
+      // Path: background → message → Notification → not down → no security → no impact → action
+      store.answerQuestion(1) // No — background
+      store.answerQuestion(1) // A message → Notification → chains
+      store.answerQuestion(1) // No — some services work
+      store.answerQuestion(1) // No security
+      store.answerQuestion(2) // Yes — no impact → action
+      store.answerQuestion(0) // Yes — action required
+      expect(store.isComplete.value).toBe(true)
+      expect(store.narrativeText.value).toContain('What to do:')
+      expect(store.narrativeText.value).toContain('Users need to take action.')
     })
   })
 })
